@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'profile_screen.dart';
 import 'cart_screen.dart';
-import 'orders_screen.dart'; // importuj svoj OrdersScreen
+import 'orders_screen.dart';
+import 'users_screen.dart'; // importuj UsersScreen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -154,6 +155,16 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CartScreen()),
+            ).then((_) {
+              setState(() {
+                _currentIndex = 0; // reset na Home kada se vrati
+              });
+            });
+          } else if (index == 3) {
+            // Dugme Korisnici
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const UsersScreen()),
             ).then((_) {
               setState(() {
                 _currentIndex = 0; // reset na Home kada se vrati

@@ -49,6 +49,7 @@ flutter:
     - assets/images/profilepic.jpg
     - assets/images/korpa.jpg
     - assets/images/boxes.jpg
+    - assets/images/users5.jpg
 
   fonts:
     - family: DancingScript
