@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class OrdersScreen extends StatelessWidget {
@@ -17,51 +18,84 @@ class OrdersScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Tamniji overlay da pozadina bude blaža
+          // Tamniji overlay za bolju čitljivost
           Container(
-            color: const Color(0x80000000), // tamnija pozadina
+            color: const Color(0x80000000),
           ),
           SafeArea(
             child: Column(
               children: [
                 const SizedBox(height: 20),
-
-                // Natpis "Porudžbine"
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      // Back dugme
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Natpis "Porudžbine" sa shadow-om
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Text(
                     'Porudžbine',
-                    style: const TextStyle(
-                      fontFamily: 'Spinnaker', // isti font
+                    style: TextStyle(
+                      fontFamily: 'Spinnaker',
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          color: Color.fromRGBO(0, 0, 0, 0.4),
+                          offset: const Offset(2, 2),
+                          blurRadius: 4,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
-                // Poluprovidni okvir za sadržaj porudžbina (smanjena opacity)
+                // Poluprovidni okvir sa frosted glass efektom
                 Expanded(
                   child: Center(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0x99FFFFFF), // providnije polje (~60% opacity)
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Trenutno nema porudžbina.',
-                          style: TextStyle(
-                            fontFamily: 'Spinnaker',
-                            fontSize: 20,
-                            color: Color(0xFFD87F7F),
-                            fontWeight: FontWeight.bold,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(25),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(25),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color.fromRGBO(0, 0, 0, 0.3),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.center,
+                          child: const Center(
+                            child: Text(
+                              'Trenutno nema porudžbina.',
+                              style: TextStyle(
+                                fontFamily: 'Spinnaker',
+                                fontSize: 20,
+                                color: Color(0xFFD87F7F),
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                         ),
                       ),
                     ),

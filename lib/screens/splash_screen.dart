@@ -55,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen>
   void _goToHomeScreen() {
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const HomeScreen(),
+        pageBuilder: (_, __, ___) =>  HomeScreen(),
         transitionsBuilder: (_, animation, __, child) {
           const begin = Offset(1.0, 0.0);
           const end = Offset.zero;

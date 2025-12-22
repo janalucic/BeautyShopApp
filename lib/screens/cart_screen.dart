@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class CartScreen extends StatelessWidget {
@@ -17,51 +18,77 @@ class CartScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Tamniji overlay da pozadina bude blaža
+          // Tamniji overlay
           Container(
-            color: const Color(0x80000000), // tamnija pozadina
+            color: const Color.fromRGBO(0, 0, 0, 0.5),
           ),
           SafeArea(
             child: Column(
               children: [
                 const SizedBox(height: 20),
-
-                // Natpis "Vaša korpa"
+                // Back dugme i centrirani naslov
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    'Vaša korpa',
-                    style: const TextStyle(
-                      fontFamily: 'Spinnaker', // isti font kao u ostatku app
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                      Expanded(
+                        child: Center(
+                          child: const Text(
+                            'Vaša korpa',
+                            style: TextStyle(
+                              fontFamily: 'Spinnaker',
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Prazni Container za balansiranje centriranja
+                      const SizedBox(width: 48),
+                    ],
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
-                // Poluprovidni okvir za sadržaj korpe (može se kasnije popuniti proizvodima)
+                // Poluprovidni okvir sa frosted glass efektom
                 Expanded(
                   child: Center(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                       color: const Color(0x80000000),
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Vaša korpa je trenutno prazna.',
-                          style: TextStyle(
-                            fontFamily: 'Spinnaker',
-                            fontSize: 20,
-                            color: Color(0xFFD87F7F),
-                            fontWeight: FontWeight.bold,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(25),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: const Color.fromRGBO(255, 255, 255, 0.25), // svetliji providan
+                            borderRadius: BorderRadius.circular(25),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(50),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.center,
+                          child: const Center(
+                            child: Text(
+                              'Vaša korpa je trenutno prazna.',
+                              style: TextStyle(
+                                fontFamily: 'Spinnaker',
+                                fontSize: 20,
+                                color: Color(0xFFD87F7F),
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
                         ),
                       ),
                     ),

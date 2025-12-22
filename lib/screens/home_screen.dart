@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+
+import 'product_detail_screen.dart';
+import 'search_results_screen.dart';
 import 'profile_screen.dart';
 import 'cart_screen.dart';
 import 'orders_screen.dart';
-import 'users_screen.dart'; // importuj UsersScreen
+import 'users_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,17 +16,22 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController();
-  int _currentPage = 0;
-  int _currentIndex = 0; // kontrola BottomNavigationBar
+  final TextEditingController _searchController = TextEditingController();
+
+  int _currentIndex = 0;
+
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
 
   final List<String> banners = [
     'assets/images/bannerno1.jpg',
     'assets/images/bannerno2.jpg',
+    'assets/images/maskara.jpg',
   ];
 
-  // Staticke kategorije
   final List<String> categories = [
     'Šamponi',
     'Losioni',
@@ -32,8 +41,184 @@ class _HomeScreenState extends State<HomeScreen> {
     'Boje za kosu',
   ];
 
+  /// MOCK proizvodi
+  final List<Map<String, dynamic>> products = [
+    {
+      'name': 'Proizvod 1',
+      'image': 'assets/images/cherry2.png',
+      'price': 1000.0,
+      'description': 'Opis proizvoda 1',
+      'popular': true,
+    },
+    {
+      'name': 'Proizvod 2',
+      'image': 'assets/images/cherry2.png',
+      'price': 1500.0,
+      'description': 'Opis proizvoda 2',
+      'popular': true,
+    },
+    {
+      'name': 'Proizvod 3',
+      'image': 'assets/images/cherry2.png',
+      'price': 2000.0,
+      'description': 'Opis proizvoda 3',
+      'popular': false,
+    },
+    {
+      'name': 'Proizvod 4',
+      'image': 'assets/images/cherry2.png',
+      'price': 1200.0,
+      'description': 'Opis proizvoda 4',
+      'popular': true,
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat(reverse: true);
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    _pageController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // =================== WIDGETI ===================
+
+  Widget _recommendedProductCard(Map<String, dynamic> product) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProductDetailScreen(
+              product: product,
+              isAdmin: true,
+            ),
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+            child: Container(
+              width: 140,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD87F7F).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    product['image'],
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    product['name'],
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '${product['price'].toStringAsFixed(2)} RSD',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _categoryButton(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ElevatedButton(
+        onPressed: () {},
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFD8B4B4),
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        ),
+        child: Text(title, style: const TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+
+  Widget _banner(String imagePath, {String? badgeText}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        image: DecorationImage(
+          image: AssetImage(imagePath),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: badgeText == null
+          ? null
+          : Positioned(
+        top: 12,
+        right: 12,
+        child: AnimatedBuilder(
+          animation: _scaleAnimation,
+          builder: (context, child) =>
+              Transform.scale(scale: _scaleAnimation.value, child: child),
+          child: Container(
+            width: 50,
+            height: 50,
+            decoration: const BoxDecoration(
+              color: Color(0xFFD87F7F),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                badgeText,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // =================== BUILD ===================
+
   @override
   Widget build(BuildContext context) {
+    final popularProducts =
+    products.where((p) => p['popular'] == true).toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5E8E8),
       body: SingleChildScrollView(
@@ -42,72 +227,80 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const SizedBox(height: 40),
 
-            // Logo
+            /// LOGO
             Image.asset(
               'assets/images/adora.jpg',
               width: double.infinity,
               height: 120,
               fit: BoxFit.cover,
             ),
+
             const SizedBox(height: 20),
 
-            // Polje za pretragu
+            /// PRETRAGA → VODI NA SEARCH RESULTS
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
+                controller: _searchController,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (query) {
+                  if (query.trim().isEmpty) return;
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SearchResultsScreen(
+                        query: query,
+                        products: products,
+                      ),
+                    ),
+                  );
+                },
                 decoration: InputDecoration(
                   hintText: 'Pretraži proizvode...',
-                  prefixIcon:
-                  const Icon(Icons.search, color: Color(0xFFD87F7F)),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30.0),
-                    borderSide: BorderSide.none,
-                  ),
+                  prefixIcon: const Icon(Icons.search,
+                      color: Color(0xFFD87F7F)),
                   filled: true,
                   fillColor: const Color(0xFFE3CFCF),
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 0,
-                    horizontal: 20,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
                   ),
                 ),
               ),
             ),
+
             const SizedBox(height: 20),
 
-            // Dugmad kategorija
+            /// KATEGORIJE
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: SizedBox(
                 height: 50,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  children: categories.map((c) => _categoryButton(c)).toList(),
+                  children: categories.map(_categoryButton).toList(),
                 ),
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // Bannere
+            /// BANNERI
             SizedBox(
               height: 200,
-              child: PageView.builder(
+              child: PageView(
                 controller: _pageController,
-                itemCount: banners.length,
-                onPageChanged: (index) {
-                  setState(() => _currentPage = index);
-                },
-                itemBuilder: (context, index) {
-                  return index == 0
-                      ? _bannerWithBadge(banners[index])
-                      : _bannerWithoutText(banners[index]);
-                },
+                children: [
+                  _banner(banners[0], badgeText: '50% OFF'),
+                  _banner(banners[1]),
+                  _banner(banners[2], badgeText: 'NOVO'),
+                ],
               ),
             ),
 
             const SizedBox(height: 10),
 
-            // Dots indicator
             Center(
               child: SmoothPageIndicator(
                 controller: _pageController,
@@ -115,16 +308,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 effect: const ExpandingDotsEffect(
                   activeDotColor: Color(0xFFD87F7F),
                   dotColor: Color(0xFFBFA1A1),
-                  dotHeight: 8,
-                  dotWidth: 8,
                 ),
               ),
             ),
 
+            const SizedBox(height: 20),
+
+            /// POPULARNO
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'Izdvajamo za vas',
+                'Izdvajamo za Vas',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -132,140 +326,56 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
+
+            const SizedBox(height: 10),
+
+            SizedBox(
+              height: 200,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children:
+                popularProducts.map(_recommendedProductCard).toList(),
+              ),
+            ),
+
+            const SizedBox(height: 30),
           ],
         ),
       ),
 
-      // Bottom navigation
+      /// BOTTOM NAV
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
+          setState(() => _currentIndex = index);
           if (index == 1) {
-            // Dugme Porudžbine
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const OrdersScreen()),
-            ).then((_) {
-              setState(() {
-                _currentIndex = 0; // reset na Home kada se vrati
-              });
-            });
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const OrdersScreen()));
           } else if (index == 2) {
-            // Dugme Korpa
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CartScreen()),
-            ).then((_) {
-              setState(() {
-                _currentIndex = 0; // reset na Home kada se vrati
-              });
-            });
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const CartScreen()));
           } else if (index == 3) {
-            // Dugme Korisnici
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const UsersScreen()),
-            ).then((_) {
-              setState(() {
-                _currentIndex = 0; // reset na Home kada se vrati
-              });
-            });
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const UsersScreen()));
           } else if (index == 4) {
-            // Dugme Profil
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ProfileScreen()),
-            ).then((_) {
-              setState(() {
-                _currentIndex = 0; // reset na Home kada se vrati
-              });
-            });
-          } else {
-            setState(() {
-              _currentIndex = index;
-            });
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()));
           }
         },
         selectedItemColor: const Color(0xFFD87F7F),
         unselectedItemColor: const Color(0xFFBFA1A1),
-        backgroundColor: const Color(0xFFF5E8E8),
         type: BottomNavigationBarType.fixed,
-        iconSize: 30,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Porudžbine'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Korpa'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Korisnici'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_cart), label: 'Korpa'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.people), label: 'Korisnici'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person), label: 'Profil'),
         ],
-      ),
-    );
-  }
-
-  Widget _categoryButton(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
-      child: ElevatedButton(
-        onPressed: () {},
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFD8B4B4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-        child: Text(
-          title,
-          style: const TextStyle(color: Colors.white),
-        ),
-      ),
-    );
-  }
-
-  Widget _bannerWithBadge(String imagePath) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        image: DecorationImage(
-          image: AssetImage(imagePath),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Align(
-        alignment: Alignment.topRight,
-        child: Container(
-          margin: const EdgeInsets.all(12),
-          width: 50,
-          height: 50,
-          decoration: const BoxDecoration(
-            color: Color(0xFFD87F7F),
-            shape: BoxShape.circle,
-          ),
-          child: const Center(
-            child: Text(
-              '50% OFF',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _bannerWithoutText(String imagePath) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        image: DecorationImage(
-          image: AssetImage(imagePath),
-          fit: BoxFit.cover,
-        ),
       ),
     );
   }
