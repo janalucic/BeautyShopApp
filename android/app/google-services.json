@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "380806719706",
+    "project_id": "beautyshop2",
+    "storage_bucket": "beautyshop2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:380806719706:android:9e74dc87becf3cf0cf9de3",
+        "android_client_info": {
+          "package_name": "com.example.flutter_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1T_OCgPYKkikP_d5x_V1oYDTjzFItLR0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
