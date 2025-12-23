@@ -3,11 +3,11 @@ import 'dart:ui';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import 'product_detail_screen.dart';
-import 'search_results_screen.dart';
-import 'profile_screen.dart';
-import 'cart_screen.dart';
+import 'comments_screen.dart';
 import 'orders_screen.dart';
+import 'cart_screen.dart';
 import 'users_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,11 +16,8 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController();
-  final TextEditingController _searchController = TextEditingController();
-
   int _currentIndex = 0;
 
   late AnimationController _animationController;
@@ -41,9 +38,9 @@ class _HomeScreenState extends State<HomeScreen>
     'Boje za kosu',
   ];
 
-  /// MOCK proizvodi
   final List<Map<String, dynamic>> products = [
     {
+      'id': 1,
       'name': 'Proizvod 1',
       'image': 'assets/images/cherry2.png',
       'price': 1000.0,
@@ -51,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen>
       'popular': true,
     },
     {
+      'id': 2,
       'name': 'Proizvod 2',
       'image': 'assets/images/cherry2.png',
       'price': 1500.0,
@@ -58,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen>
       'popular': true,
     },
     {
+      'id': 3,
       'name': 'Proizvod 3',
       'image': 'assets/images/cherry2.png',
       'price': 2000.0,
@@ -65,6 +64,7 @@ class _HomeScreenState extends State<HomeScreen>
       'popular': false,
     },
     {
+      'id': 4,
       'name': 'Proizvod 4',
       'image': 'assets/images/cherry2.png',
       'price': 1200.0,
@@ -91,11 +91,8 @@ class _HomeScreenState extends State<HomeScreen>
   void dispose() {
     _animationController.dispose();
     _pageController.dispose();
-    _searchController.dispose();
     super.dispose();
   }
-
-  // =================== WIDGETI ===================
 
   Widget _recommendedProductCard(Map<String, dynamic> product) {
     return GestureDetector(
@@ -119,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen>
             child: Container(
               width: 140,
               decoration: BoxDecoration(
-                color: const Color(0xFFD87F7F).withValues(alpha: 0.2),
+                color: const Color(0xFFD87F7F).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
@@ -161,63 +158,81 @@ class _HomeScreenState extends State<HomeScreen>
         onPressed: () {},
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFFD8B4B4),
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         child: Text(title, style: const TextStyle(color: Colors.white)),
       ),
     );
   }
 
-  Widget _banner(String imagePath, {String? badgeText}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        image: DecorationImage(
-          image: AssetImage(imagePath),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: badgeText == null
-          ? null
-          : Positioned(
-        top: 12,
-        right: 12,
-        child: AnimatedBuilder(
-          animation: _scaleAnimation,
-          builder: (context, child) =>
-              Transform.scale(scale: _scaleAnimation.value, child: child),
-          child: Container(
-            width: 50,
-            height: 50,
-            decoration: const BoxDecoration(
-              color: Color(0xFFD87F7F),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                badgeText,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
+  Widget _banner(String imagePath, {Map<String, dynamic>? product, String? badgeText}) {
+    return GestureDetector(
+      onTap: () {
+        if (product != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ProductDetailScreen(
+                product: product,
+                isAdmin: true,
               ),
             ),
-          ),
+          );
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 12),
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.asset(
+                imagePath,
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+              ),
+            ),
+            if (badgeText != null)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: AnimatedBuilder(
+                  animation: _scaleAnimation,
+                  builder: (context, child) => Transform.scale(
+                    scale: _scaleAnimation.value,
+                    child: child,
+                  ),
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFD87F7F),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        badgeText,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
 
-  // =================== BUILD ===================
-
   @override
   Widget build(BuildContext context) {
-    final popularProducts =
-    products.where((p) => p['popular'] == true).toList();
+    final popularProducts = products.where((p) => p['popular'] == true).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5E8E8),
@@ -233,41 +248,6 @@ class _HomeScreenState extends State<HomeScreen>
               width: double.infinity,
               height: 120,
               fit: BoxFit.cover,
-            ),
-
-            const SizedBox(height: 20),
-
-            /// PRETRAGA → VODI NA SEARCH RESULTS
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                controller: _searchController,
-                textInputAction: TextInputAction.search,
-                onSubmitted: (query) {
-                  if (query.trim().isEmpty) return;
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SearchResultsScreen(
-                        query: query,
-                        products: products,
-                      ),
-                    ),
-                  );
-                },
-                decoration: InputDecoration(
-                  hintText: 'Pretraži proizvode...',
-                  prefixIcon: const Icon(Icons.search,
-                      color: Color(0xFFD87F7F)),
-                  filled: true,
-                  fillColor: const Color(0xFFE3CFCF),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
             ),
 
             const SizedBox(height: 20),
@@ -292,8 +272,8 @@ class _HomeScreenState extends State<HomeScreen>
               child: PageView(
                 controller: _pageController,
                 children: [
-                  _banner(banners[0], badgeText: '50% OFF'),
-                  _banner(banners[1]),
+                  _banner(banners[0], product: products[0], badgeText: '50% OFF'),
+                  _banner(banners[1], product: products[1]),
                   _banner(banners[2], badgeText: 'NOVO'),
                 ],
               ),
@@ -334,8 +314,7 @@ class _HomeScreenState extends State<HomeScreen>
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                children:
-                popularProducts.map(_recommendedProductCard).toList(),
+                children: popularProducts.map(_recommendedProductCard).toList(),
               ),
             ),
 
@@ -349,18 +328,18 @@ class _HomeScreenState extends State<HomeScreen>
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() => _currentIndex = index);
-          if (index == 1) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const OrdersScreen()));
+
+          // navigacija ka drugim screenovima
+          if (index == 0) {
+            // HomeScreen je već otvoren
+          } else if (index == 1) {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const OrdersScreen()));
           } else if (index == 2) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const CartScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen()));
           } else if (index == 3) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const UsersScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const UsersScreen()));
           } else if (index == 4) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
           }
         },
         selectedItemColor: const Color(0xFFD87F7F),
@@ -369,12 +348,9 @@ class _HomeScreenState extends State<HomeScreen>
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Porudžbine'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart), label: 'Korpa'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.people), label: 'Korisnici'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person), label: 'Profil'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Korpa'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Korisnici'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
         ],
       ),
     );

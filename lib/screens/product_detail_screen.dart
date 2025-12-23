@@ -1,10 +1,10 @@
-// product_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'comments_screen.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final Map<String, dynamic> product;
-  final bool isAdmin; // za prikaz admin dugmadi
+  final bool isAdmin;
 
   const ProductDetailScreen({
     super.key,
@@ -49,7 +49,7 @@ class ProductDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Slika proizvoda sa frosted glass efektom
+                  // Slika proizvoda
                   Center(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(25),
@@ -69,7 +69,7 @@ class ProductDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Opis proizvoda
+                  // Opis
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
@@ -79,7 +79,7 @@ class ProductDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Cena proizvoda
+                  // Cena
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(
@@ -94,7 +94,7 @@ class ProductDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 30),
 
-                  // Dugmad: Vidi komentare i Dodaj u korpu
+                  // Dugmad
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Row(
@@ -102,7 +102,12 @@ class ProductDetailScreen extends StatelessWidget {
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () {
-                              // kasnije vodi na CommentsScreen
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CommentsScreen(productId: product['id'], isAdmin: isAdmin),
+                                ),
+                              );
                             },
                             icon: const Icon(Icons.comment, color: Colors.white),
                             label: const Text(
@@ -118,9 +123,7 @@ class ProductDetailScreen extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () {
-                              // logika za dodavanje u korpu
-                            },
+                            onPressed: () {},
                             icon: const Icon(Icons.shopping_cart, color: Colors.white),
                             label: const Text(
                               'Dodaj u korpu',
@@ -135,48 +138,6 @@ class ProductDetailScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 10),
-
-                  // Admin dugmad (vidljiva samo ako je isAdmin = true)
-                  if (isAdmin)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // logika za izmenu proizvoda
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFD87F7F),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                              ),
-                              child: const Text(
-                                'Izmeni',
-                                style: TextStyle(color: Colors.white, fontFamily: 'Spinnaker'),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // logika za brisanje proizvoda
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFD87F7F),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                              ),
-                              child: const Text(
-                                'Obriši',
-                                style: TextStyle(color: Colors.white, fontFamily: 'Spinnaker'),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   const SizedBox(height: 30),
                 ],
               ),

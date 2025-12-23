@@ -1,27 +1,5 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
-
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Beauty Shop',
-      theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
-        fontFamily: 'Spinnaker',
-      ),
-      home: const SplashScreen(),
-    );
-  }
-}
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -33,17 +11,20 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
+  late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
 
-    // Fade-in animacija teksta
-    _controller =
-        AnimationController(vsync: this, duration: const Duration(seconds: 2));
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(_controller);
-    _controller.forward();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat(reverse: true);
+
+    _animation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -52,116 +33,97 @@ class _SplashScreenState extends State<SplashScreen>
     super.dispose();
   }
 
-  void _goToHomeScreen() {
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) =>  HomeScreen(),
-        transitionsBuilder: (_, animation, __, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          final tween = Tween(begin: begin, end: end)
-              .chain(CurveTween(curve: Curves.easeInOut));
-          return SlideTransition(position: animation.drive(tween), child: child);
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GestureDetector(
-        onHorizontalDragEnd: (details) {
-          if (details.primaryVelocity! < 0) {
-            _goToHomeScreen();
-          }
-        },
-        child: Stack(
-          children: [
-            // Pozadinska slika sa blagim blur efektom
-            SizedBox.expand(
-              child: Image.asset(
-                'assets/images/splash.jpg',
-                fit: BoxFit.cover,
-              ),
+      body: Stack(
+        children: [
+          // Pozadina
+          SizedBox.expand(
+            child: Image.asset(
+              'assets/images/splash111.jpg',
+              fit: BoxFit.cover,
             ),
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2), // blagi blur
-                child: Container(
-                  color: Colors.black.withOpacity(0), // transparent overlay
-                ),
-              ),
-            ),
+          ),
 
-            // Fade-in tekst
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 40),
-                    FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: const Text(
-                        'Lepota počinje ovde.',
+          // Tamni overlay
+          Container(
+            color: const Color.fromARGB(51, 0, 0, 0),
+          ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                const Spacer(flex: 1), // gornji razmak
+
+                // Logo i slogan centrirani
+                Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Logo
+                      CircleAvatar(
+                        radius: 60,
+                        backgroundColor: const Color.fromARGB(77, 255, 255, 255),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/images/adora.jpg',
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Slogan
+                      const Text(
+                        'Beauty made easy',
                         style: TextStyle(
-                          fontFamily: 'Spinnaker',
-                          fontSize: 36,
-                          fontStyle: FontStyle.italic,
+                          color: Color(0xFF800020), // bordo
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF800020), // burgundy
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+
+                const Spacer(flex: 3), // razmak između logo/slogan i strelice
+
+                // Pulsirajuća strelica skroz desno
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 20.0, bottom: 50),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const HomeScreen()),
+                        );
+                      },
+                      child: ScaleTransition(
+                        scale: _animation,
+                        child: const Text(
+                          '>>>',
+                          style: TextStyle(
+                            color: Color(0xFFFFC1CC), // svetlo roze
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 4,
+                          ),
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-
-            // Hint strelica i tekst u burgundy boji sa pulsiranjem
-            Positioned(
-              bottom: 40,
-              left: 0,
-              right: 0,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.8, end: 1.2),
-                    duration: const Duration(seconds: 1),
-                    curve: Curves.easeInOut,
-                    builder: (context, scale, child) {
-                      return Transform.scale(
-                        scale: scale,
-                        child: child,
-                      );
-                    },
-                    onEnd: () {
-                      setState(() {}); // reverz pulsiranja
-                    },
-                    child: const Icon(
-                      Icons.arrow_forward,
-                      size: 40,
-                      color: Color(0xFF800020), // burgundy
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Prevuci prstom da nastaviš',
-                    style: TextStyle(
-                      fontFamily: 'Spinnaker',
-                      fontSize: 16,
-                      color: Color(0xFF800020), // burgundy
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

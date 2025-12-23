@@ -9,91 +9,160 @@ class CartScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Pozadinska slika
+          //  POZADINSKA SLIKA
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('assets/images/korpa.jpg'),
+                image: AssetImage('assets/images/korpa5.png'),
                 fit: BoxFit.cover,
               ),
             ),
           ),
-          // Tamniji overlay
+
+          //   OVERLAY
           Container(
-            color: const Color.fromRGBO(0, 0, 0, 0.5),
+            color: Colors.black.withOpacity(0.25),
           ),
+
           SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: 20),
-                // Back dugme i centrirani naslov
+                const SizedBox(height: 16),
+
+                // 🔙 BACK + NASLOV
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
+                        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                      Expanded(
+                      const Expanded(
                         child: Center(
-                          child: const Text(
+                          child: Text(
                             'Vaša korpa',
                             style: TextStyle(
                               fontFamily: 'Spinnaker',
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
+                              letterSpacing: 0.8,
                             ),
                           ),
                         ),
                       ),
-                      // Prazni Container za balansiranje centriranja
                       const SizedBox(width: 48),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
-                // Poluprovidni okvir sa frosted glass efektom
+
+                const SizedBox(height: 30),
+
+                // 🛒 GLAVNI GLASS CARD – potpuno proziran
                 Expanded(
                   child: Center(
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(25),
+                      borderRadius: BorderRadius.circular(30),
                       child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
                         child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                          padding: const EdgeInsets.all(20),
+                          margin: const EdgeInsets.symmetric(horizontal: 20),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
                           decoration: BoxDecoration(
-                            color: const Color.fromRGBO(255, 255, 255, 0.25), // svetliji providan
-                            borderRadius: BorderRadius.circular(25),
+                            color: const Color.fromRGBO(255, 255, 255, 0.1),
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.1),
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withAlpha(50),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
+                                color: Colors.black.withOpacity(0.25),
+                                blurRadius: 15,
+                                offset: const Offset(0, 8),
                               ),
                             ],
                           ),
-                          child: const Center(
-                            child: Text(
-                              'Vaša korpa je trenutno prazna.',
-                              style: TextStyle(
-                                fontFamily: 'Spinnaker',
-                                fontSize: 20,
-                                color: Color(0xFFD87F7F),
-                                fontWeight: FontWeight.bold,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // 🛍 ICON
+                              const Icon(
+                                Icons.shopping_bag_outlined,
+                                size: 80,
+                                color: Color(0xFFFF5DA2),
                               ),
-                              textAlign: TextAlign.center,
-                            ),
+
+                              const SizedBox(height: 24),
+
+                              // 💖 TEKST
+                              const Text(
+                                'Vaša korpa je trenutno prazna',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontFamily: 'Spinnaker',
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFFF5DA2), // Barbie pink
+                                  letterSpacing: 0.6,
+                                  shadows: [
+                                    Shadow(
+                                      blurRadius: 6,
+                                      color: Colors.black45,
+                                      offset: Offset(1, 2),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(height: 12),
+
+                              const Text(
+                                'Dodajte proizvode i vratite se ovde 💕',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.white70,
+                                ),
+                              ),
+
+                              const SizedBox(height: 40),
+
+                              // 🎀 DUGME
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFFF5DA2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 40,
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                  elevation: 8,
+                                ),
+                                child: const Text(
+                                  'Nazad na kupovinu',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 30),
               ],
             ),
           ),
