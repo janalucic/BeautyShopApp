@@ -7,16 +7,24 @@ class CategoryService {
 
   Future<List<Category>> getCategories() async {
     final snapshot = await categoriesRef.get();
+
     if (snapshot.exists) {
       final Map data = snapshot.value as Map;
-      return data.entries.map((e) {
-        final value = e.value as Map;
+
+      // Filtriramo null vrednosti i mapiramo id kao int
+      return data.entries
+          .where((e) => e.value != null) // uklanja null elemente
+          .map((e) {
+        final value = Map<String, dynamic>.from(e.value as Map);
         return Category(
-          id: value['id'].toString(),
+          id: value['id'] is int
+              ? value['id']
+              : int.parse(value['id'].toString()), // sigurni int
           name: value['name'].toString(),
         );
       }).toList();
     }
+
     return [];
   }
 }

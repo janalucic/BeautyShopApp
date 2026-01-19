@@ -11,8 +11,8 @@ class OrderItem {
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     return OrderItem(
-      productId: json['productId'] as int,
-      quantity: json['quantity'] as int,
+      productId: json['productId'],
+      quantity: json['quantity'],
       price: (json['price'] as num).toDouble(),
     );
   }
@@ -31,7 +31,6 @@ class UserOrder {
   final int userId;
   final String status;
   final double totalPrice;
-  final DateTime createdAt;
   final List<OrderItem> items;
 
   UserOrder({
@@ -39,19 +38,18 @@ class UserOrder {
     required this.userId,
     required this.status,
     required this.totalPrice,
-    required this.createdAt,
     required this.items,
   });
 
   factory UserOrder.fromJson(Map<String, dynamic> json) {
     return UserOrder(
-      id: json['id'] as int,
-      userId: json['userId'] as int,
-      status: json['status'] as String,
+      id: json['id'],
+      userId: json['userId'],
+      status: json['status'],
       totalPrice: (json['totalPrice'] as num).toDouble(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
       items: (json['items'] as List)
-          .map((item) => OrderItem.fromJson(item))
+          .map((item) =>
+          OrderItem.fromJson(Map<String, dynamic>.from(item)))
           .toList(),
     );
   }
@@ -62,7 +60,6 @@ class UserOrder {
       'userId': userId,
       'status': status,
       'totalPrice': totalPrice,
-      'createdAt': createdAt.toIso8601String(),
       'items': items.map((item) => item.toJson()).toList(),
     };
   }

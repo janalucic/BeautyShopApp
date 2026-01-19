@@ -1,39 +1,70 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import '../models/product.dart';
 
 class ProductService {
-  final CollectionReference productsCollection =
-  FirebaseFirestore.instance.collection('products');
+  final DatabaseReference _productsRef =
+  FirebaseDatabase.instance.ref('Products');
 
-  // Prikaz svih proizvoda
+  // ===============================
+  // GET ALL PRODUCTS
+  // ===============================
   Future<List<Product>> getProducts() async {
-    var snapshot = await productsCollection.get();
-    return snapshot.docs
-        .map((doc) => Product.fromJson(doc.data() as Map<String, dynamic>))
-        .toList();
+    final snapshot = await _productsRef.get();
+
+    if (!snapshot.exists) return [];
+
+    final Map data = snapshot.value as Map;
+
+    return data.entries.map((entry) {
+      return Product.fromJson(
+        Map<String, dynamic>.from(entry.value),
+      );
+    }).toList();
   }
 
-  // Prikaz proizvoda po ID-u
-  Future<Product?> getProductById(String id) async {
-    var doc = await productsCollection.doc(id).get();
-    if (doc.exists) {
-      return Product.fromJson(doc.data() as Map<String, dynamic>);
-    }
-    return null;
+  // ===============================
+  // GET PRODUCT BY ID
+  // ===============================
+  Future<Product?> getProductById(int id) async {
+    final snapshot = await _productsRef.child(id.toString()).get();
+
+    if (!snapshot.exists) return null;
+
+    return Product.fromJson(
+      Map<String, dynamic>.from(snapshot.value as Map),
+    );
   }
 
-  // Dodavanje proizvoda
+  // ===============================
+  // GET POPULAR PRODUCTS
+  // ===============================
+  Future<List<Product>> getPopularProducts() async {
+    final products = await getProducts();
+    return products.where((p) => p.popular).toList();
+  }
+
+  // ===============================
+  // ADD PRODUCT
+  // ===============================
   Future<void> addProduct(Product product) async {
-    await productsCollection.doc(product.id.toString()).set(product.toJson());
+    await _productsRef
+        .child(product.id.toString())
+        .set(product.toJson());
   }
 
-  // Ažuriranje proizvoda
+  // ===============================
+  // UPDATE PRODUCT
+  // ===============================
   Future<void> updateProduct(Product product) async {
-    await productsCollection.doc(product.id.toString()).update(product.toJson());
+    await _productsRef
+        .child(product.id.toString())
+        .update(product.toJson());
   }
 
-  // Brisanje proizvoda
-  Future<void> deleteProduct(String id) async {
-    await productsCollection.doc(id).delete();
+  // ===============================
+  // DELETE PRODUCT
+  // ===============================
+  Future<void> deleteProduct(int id) async {
+    await _productsRef.child(id.toString()).remove();
   }
 }

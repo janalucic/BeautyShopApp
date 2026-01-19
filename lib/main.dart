@@ -1,14 +1,26 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
-import 'screens/splash_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+import 'firebase_options.dart';
+import 'screens/splash_screen.dart';
+import 'viewmodels/product.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Privremeno ne inicijalizujemo Firebase
-  // await Firebase.initializeApp(...);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ProductViewModel()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

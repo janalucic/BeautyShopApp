@@ -9,7 +9,6 @@ class ProductViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // GETTERS (za UI)
   List<Product> get products => _products;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -37,7 +36,7 @@ class ProductViewModel extends ChangeNotifier {
   // ===============================
   Future<Product?> getProductById(int id) async {
     try {
-      return await _productService.getProductById(id.toString());
+      return await _productService.getProductById(id);
     } catch (e) {
       _errorMessage = 'Greška pri dohvatu proizvoda';
       notifyListeners();
@@ -97,7 +96,7 @@ class ProductViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _productService.deleteProduct(id.toString());
+      await _productService.deleteProduct(id);
       _products.removeWhere((p) => p.id == id);
     } catch (e) {
       _errorMessage = 'Greška pri brisanju proizvoda';
