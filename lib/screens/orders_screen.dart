@@ -25,23 +25,7 @@ class OrdersScreen extends StatelessWidget {
           SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      // Back dugme
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 40), // Malo više razmaka od vrha
                 // Natpis "Porudžbine" sa shadow-om
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),

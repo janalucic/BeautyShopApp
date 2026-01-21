@@ -3,20 +3,26 @@ import '../models/category.dart';
 
 class CategoryService {
   final DatabaseReference categoriesRef =
-  FirebaseDatabase.instance.ref('Categories');
+      FirebaseDatabase.instance.ref('Categories');
 
   Future<List<Category>> getCategories() async {
     final snapshot = await categoriesRef.get();
-    if (snapshot.exists) {
-      final Map data = snapshot.value as Map;
-      return data.entries.map((e) {
-        final value = e.value as Map;
+
+    final raw = snapshot.value;
+
+    if (raw is List) {
+      return raw.where((e) => e != null).map((e) {
+        final value = Map<String, dynamic>.from(e as Map);
+
         return Category(
-          id: value['id'].toString(),
+          id: value['id'] is int
+              ? value['id']
+              : int.parse(value['id'].toString()),
           name: value['name'].toString(),
         );
       }).toList();
     }
+
     return [];
   }
 }

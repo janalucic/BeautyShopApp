@@ -1,47 +1,44 @@
 class Product {
   final int id;
+  final int categoryId;
   final String name;
   final String description;
-  final double price;
   final String imageUrl;
-  final int categoryId;
-  final int userId;
-  final DateTime createdAt;
+  final double price;
+  final bool popular;
 
   Product({
     required this.id,
+    required this.categoryId,
     required this.name,
     required this.description,
-    required this.price,
     required this.imageUrl,
-    required this.categoryId,
-    required this.userId,
-    required this.createdAt,
+    required this.price,
+    required this.popular,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      description: json['description'] as String,
+      id: json['id'],
+      categoryId: json['categoryId'],
+      name: json['name'],
+      description: json['description'],
+      imageUrl: json['imageUrl'],
       price: (json['price'] as num).toDouble(),
-      imageUrl: json['imageUrl'] as String,
-      categoryId: json['categoryId'] as int,
-      userId: json['userId'] as int,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      popular: json['popular'] ?? false,
     );
   }
 
+  // <<< DODAJ OVO >>>
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'categoryId': categoryId,
       'name': name,
       'description': description,
-      'price': price,
       'imageUrl': imageUrl,
-      'categoryId': categoryId,
-      'userId': userId,
-      'createdAt': createdAt.toIso8601String(),
+      'price': price,
+      'popular': popular,
     };
   }
 }

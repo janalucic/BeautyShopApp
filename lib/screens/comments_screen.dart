@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
+import 'login_screen.dart'; // ← DODATO
 
 class Comment {
   final int id;
@@ -29,6 +32,63 @@ class _CommentsScreenState extends State<CommentsScreen> {
 
   void _addComment(String text) {
     if (text.trim().isEmpty) return;
+
+    final bool isGuest = context.read<UserProvider>().isGuest;
+
+    if (isGuest) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: const Color(0xFFFFC1CC),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          title: const Text(
+            'Prijavite se',
+            style: TextStyle(
+              color: Color(0xFF800020),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text(
+            'Morate se prijaviti da biste ostavili komentar.',
+            style: TextStyle(color: Color(0xFF800020)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Otkaži',
+                style: TextStyle(color: Color(0xFF800020)),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD87F7F),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LoginScreen(),
+                  ),
+                );
+              },
+              child: const Text(
+                'Prijavi se',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     setState(() {
       comments.add(Comment(
         id: comments.length + 1,
@@ -36,6 +96,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
         text: text,
       ));
     });
+
     _commentController.clear();
   }
 
@@ -52,19 +113,15 @@ class _CommentsScreenState extends State<CommentsScreen> {
         backgroundColor: const Color(0xFFF5E8E8),
         title: const Text(
           'Potvrdi brisanje',
-          style: TextStyle(color: Color(0xFFD87F7F), fontFamily: 'Spinnaker'),
+          style: TextStyle(color: Color(0xFFD87F7F)),
         ),
         content: const Text(
           'Da li ste sigurni da želite da obrišete ovaj komentar?',
-          style: TextStyle(fontFamily: 'Spinnaker'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Otkaži',
-              style: TextStyle(color: Color(0xFFBFA1A1), fontFamily: 'Spinnaker'),
-            ),
+            child: const Text('Otkaži'),
           ),
           TextButton(
             onPressed: () {
@@ -73,7 +130,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
             },
             child: const Text(
               'Obriši',
-              style: TextStyle(color: Color(0xFFD87F7F), fontFamily: 'Spinnaker'),
+              style: TextStyle(color: Color(0xFFD87F7F)),
             ),
           ),
         ],
@@ -83,7 +140,10 @@ class _CommentsScreenState extends State<CommentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final productComments = comments.where((c) => c.productId == widget.productId).toList();
+    final productComments =
+    comments.where((c) => c.productId == widget.productId).toList();
+
+    final bool isGuest = context.watch<UserProvider>().isGuest;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5E8E8),
@@ -91,7 +151,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
         backgroundColor: const Color(0xFFD87F7F),
         title: const Text(
           'Komentari',
-          style: TextStyle(color: Colors.white, fontFamily: 'Spinnaker'),
+          style: TextStyle(color: Colors.white),
         ),
       ),
       body: Column(
@@ -99,10 +159,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
           Expanded(
             child: productComments.isEmpty
                 ? const Center(
-              child: Text(
-                'Nema komentara za ovaj proizvod.',
-                style: TextStyle(fontFamily: 'Spinnaker'),
-              ),
+              child: Text('Nema komentara za ovaj proizvod.'),
             )
                 : ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -110,15 +167,18 @@ class _CommentsScreenState extends State<CommentsScreen> {
               itemBuilder: (context, index) {
                 final comment = productComments[index];
                 return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
                   color: const Color(0xFFE3CFCF),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                   child: ListTile(
-                    title: Text(comment.text, style: const TextStyle(fontFamily: 'Spinnaker')),
-                    trailing: widget.isAdmin
+                    title: Text(comment.text),
+                    trailing: (!isGuest && widget.isAdmin)
                         ? IconButton(
-                      icon: const Icon(Icons.delete, color: Color(0xFFD87F7F)),
-                      onPressed: () => _confirmDelete(comment),
+                      icon: const Icon(Icons.delete,
+                          color: Color(0xFFD87F7F)),
+                      onPressed: () =>
+                          _confirmDelete(comment),
                     )
                         : null,
                   ),
@@ -135,8 +195,8 @@ class _CommentsScreenState extends State<CommentsScreen> {
                     controller: _commentController,
                     decoration: InputDecoration(
                       hintText: 'Dodaj komentar...',
-                      fillColor: const Color(0xFFE3CFCF),
                       filled: true,
+                      fillColor: const Color(0xFFE3CFCF),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                         borderSide: BorderSide.none,
@@ -149,13 +209,15 @@ class _CommentsScreenState extends State<CommentsScreen> {
                   onPressed: () => _addComment(_commentController.text),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFD87F7F),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                   child: const Icon(Icons.send, color: Colors.white),
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );

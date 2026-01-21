@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
+import 'login_screen.dart'; // importuj svoj LoginScreen
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -64,7 +64,8 @@ class _SplashScreenState extends State<SplashScreen>
                       // Logo
                       CircleAvatar(
                         radius: 60,
-                        backgroundColor: const Color.fromARGB(77, 255, 255, 255),
+                        backgroundColor:
+                        const Color.fromARGB(77, 255, 255, 255),
                         child: ClipOval(
                           child: Image.asset(
                             'assets/images/adora.jpg',
@@ -93,16 +94,18 @@ class _SplashScreenState extends State<SplashScreen>
 
                 const Spacer(flex: 3), // razmak između logo/slogan i strelice
 
-                // Pulsirajuća strelica skroz desno
+                // Pulsirajuća strelica
                 Align(
                   alignment: Alignment.bottomRight,
                   child: Padding(
                     padding: const EdgeInsets.only(right: 20.0, bottom: 50),
                     child: GestureDetector(
                       onTap: () {
+                        // OVDE preusmerava na LoginScreen
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (_) => const HomeScreen()),
+                          MaterialPageRoute(
+                              builder: (_) => const LoginScreen()),
                         );
                       },
                       child: ScaleTransition(

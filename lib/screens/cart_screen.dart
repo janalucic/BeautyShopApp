@@ -118,7 +118,7 @@ class CartScreen extends StatelessWidget {
                               const SizedBox(height: 12),
 
                               const Text(
-                                'Dodajte proizvode i vratite se ovde 💕',
+                                'Dodajte proizvode i vratite se ovde ',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 15,

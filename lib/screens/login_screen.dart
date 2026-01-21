@@ -1,5 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'home_screen.dart';
+import '../providers/user_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,18 +33,17 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
                 child: Column(
                   children: [
                     const SizedBox(height: 50),
-
                     // Logo u kružiću
                     CircleAvatar(
                       radius: 50,
-                      backgroundColor: Colors.white.withAlpha((0.3 * 255).toInt()),
+                      backgroundColor:
+                      Colors.white.withAlpha((0.3 * 255).toInt()),
                       child: ClipOval(
                         child: Image.asset(
                           'assets/images/adora.jpg',
@@ -51,9 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 40),
-
                     // Panel sa inputima i dugmadima
                     ClipRRect(
                       borderRadius: BorderRadius.circular(30),
@@ -61,13 +61,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                         child: Container(
                           margin: const EdgeInsets.symmetric(horizontal: 24),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 36),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF800020), // bordo panel
+                            color: const Color(0xFF800020),
                             borderRadius: BorderRadius.circular(30),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withAlpha((0.3 * 255).toInt()),
+                                color:
+                                Colors.black.withAlpha((0.3 * 255).toInt()),
                                 blurRadius: 12,
                                 offset: const Offset(0, 6),
                               ),
@@ -80,34 +82,36 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: const TextStyle(color: Colors.white),
                                 decoration: InputDecoration(
                                   hintText: 'Email',
-                                  hintStyle: const TextStyle(color: Colors.white70),
+                                  hintStyle:
+                                  const TextStyle(color: Colors.white70),
                                   filled: true,
-                                  fillColor: Colors.pink[100]?.withAlpha(50), // svetli roze okvir
+                                  fillColor: Colors.pink[100]?.withAlpha(50),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(20),
                                     borderSide: BorderSide.none,
                                   ),
                                 ),
                               ),
-
                               const SizedBox(height: 16),
-
                               // Password polje sa ikonicom oka
                               TextField(
                                 obscureText: _obscurePassword,
                                 style: const TextStyle(color: Colors.white),
                                 decoration: InputDecoration(
                                   hintText: 'Lozinka',
-                                  hintStyle: const TextStyle(color: Colors.white70),
+                                  hintStyle:
+                                  const TextStyle(color: Colors.white70),
                                   filled: true,
-                                  fillColor: Colors.pink[100]?.withAlpha(50), // svetli roze okvir
+                                  fillColor: Colors.pink[100]?.withAlpha(50),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(20),
                                     borderSide: BorderSide.none,
                                   ),
                                   suffixIcon: IconButton(
                                     icon: Icon(
-                                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                      _obscurePassword
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
                                       color: Colors.white70,
                                     ),
                                     onPressed: () {
@@ -118,19 +122,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),
-
                               const SizedBox(height: 24),
-
-                              // Prijavi se dugme (burgundi)
+                              // Prijavi se dugme
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    // Ovde ide prava logika za login kasnije
+                                    // OVDE IDE PRAVA LOGIKA LOGIN-A kasnije
+                                    // Na primer: context.read<UserProvider>().login(...)
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF800020),
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 14),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(25),
                                     ),
@@ -145,21 +149,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),
-
                               const SizedBox(height: 12),
-
-                              // Registruj se dugme (belo dugme sa bordo slovima)
+                              // Registruj se dugme
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    // Otvaranje privremenog panela za registraciju
                                     showDialog(
                                       context: context,
                                       builder: (_) => AlertDialog(
-                                        backgroundColor: const Color(0xFF800020), // bordo panel
+                                        backgroundColor: const Color(0xFF800020),
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(25),
+                                          borderRadius:
+                                          BorderRadius.circular(25),
                                         ),
                                         title: const Text(
                                           'Registracija',
@@ -169,28 +171,40 @@ class _LoginScreenState extends State<LoginScreen> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             TextField(
-                                              style: const TextStyle(color: Colors.white),
-                                              decoration: const InputDecoration(
+                                              style: const TextStyle(
+                                                  color: Colors.white),
+                                              decoration:
+                                              const InputDecoration(
                                                 hintText: 'Ime i prezime',
-                                                hintStyle: TextStyle(color: Colors.white70),
+                                                hintStyle: TextStyle(
+                                                    color: Colors.white70),
                                                 filled: true,
-                                                fillColor: Color.fromARGB(38, 255, 255, 255),
+                                                fillColor:
+                                                Color.fromARGB(38, 255, 255, 255),
                                                 border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.all(Radius.circular(15)),
+                                                  borderRadius:
+                                                  BorderRadius.all(
+                                                      Radius.circular(15)),
                                                   borderSide: BorderSide.none,
                                                 ),
                                               ),
                                             ),
                                             const SizedBox(height: 8),
                                             TextField(
-                                              style: const TextStyle(color: Colors.white),
-                                              decoration: const InputDecoration(
+                                              style: const TextStyle(
+                                                  color: Colors.white),
+                                              decoration:
+                                              const InputDecoration(
                                                 hintText: 'Email',
-                                                hintStyle: TextStyle(color: Colors.white70),
+                                                hintStyle: TextStyle(
+                                                    color: Colors.white70),
                                                 filled: true,
-                                                fillColor: Color.fromARGB(38, 255, 255, 255),
+                                                fillColor:
+                                                Color.fromARGB(38, 255, 255, 255),
                                                 border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.all(Radius.circular(15)),
+                                                  borderRadius:
+                                                  BorderRadius.all(
+                                                      Radius.circular(15)),
                                                   borderSide: BorderSide.none,
                                                 ),
                                               ),
@@ -198,14 +212,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                             const SizedBox(height: 8),
                                             TextField(
                                               obscureText: true,
-                                              style: const TextStyle(color: Colors.white),
-                                              decoration: const InputDecoration(
+                                              style: const TextStyle(
+                                                  color: Colors.white),
+                                              decoration:
+                                              const InputDecoration(
                                                 hintText: 'Lozinka',
-                                                hintStyle: TextStyle(color: Colors.white70),
+                                                hintStyle: TextStyle(
+                                                    color: Colors.white70),
                                                 filled: true,
-                                                fillColor: Color.fromARGB(38, 255, 255, 255),
+                                                fillColor:
+                                                Color.fromARGB(38, 255, 255, 255),
                                                 border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.all(Radius.circular(15)),
+                                                  borderRadius:
+                                                  BorderRadius.all(
+                                                      Radius.circular(15)),
                                                   borderSide: BorderSide.none,
                                                 ),
                                               ),
@@ -214,7 +234,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                         actions: [
                                           TextButton(
-                                            onPressed: () => Navigator.pop(context),
+                                            onPressed: () =>
+                                                Navigator.pop(context),
                                             child: const Text(
                                               'Otkaži',
                                               style: TextStyle(color: Colors.white),
@@ -223,24 +244,26 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ElevatedButton(
                                             onPressed: () {
                                               Navigator.pop(context);
-                                              ScaffoldMessenger.of(context).showSnackBar(
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
                                                 const SnackBar(
                                                     content: Text(
                                                         'Registrovan (UI test)!')),
                                               );
                                             },
                                             style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.white, // belo dugme
+                                              backgroundColor: Colors.white,
                                               padding: const EdgeInsets.symmetric(
                                                   vertical: 14, horizontal: 20),
                                               shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(20),
+                                                borderRadius:
+                                                BorderRadius.circular(20),
                                               ),
                                             ),
                                             child: const Text(
                                               'Registruj se',
                                               style: TextStyle(
-                                                  color: Color(0xFF800020), // bordo slova
+                                                  color: Color(0xFF800020),
                                                   fontWeight: FontWeight.bold),
                                             ),
                                           ),
@@ -249,8 +272,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     );
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white, // belo dugme
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    backgroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 14),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(25),
                                     ),
@@ -258,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: const Text(
                                     'Registruj se',
                                     style: TextStyle(
-                                      color: Color(0xFF800020), // bordo slova
+                                      color: Color(0xFF800020),
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -270,27 +294,30 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 20),
-
-                    // ✅ Dugme "Prijavi se kao gost" – sada izvan panela, uvek vidljivo
+                    // Dugme "Prijavi se kao gost"
                     TextButton(
                       onPressed: () {
-                        // Ovde ide logika za guest pristup
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Prijavljen kao gost (UI test)')),
+                        // 1️⃣ Postavi korisnika kao gosta
+                        context.read<UserProvider>().loginAsGuest();
+
+                        // 2️⃣ Idi na HomeScreen
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HomeScreen(),
+                          ),
                         );
                       },
                       child: const Text(
                         'Prijavi se kao gost',
                         style: TextStyle(
-                          color: Colors.white, // svetla boja da se vidi
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 50),
                   ],
                 ),
