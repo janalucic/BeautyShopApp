@@ -15,15 +15,19 @@ class ProductService {
 
     final raw = snapshot.value;
 
-    // Products je lista, obrati paznju za sve pozive da Firebase vraca listu, a ne Mapu.
+    // Firebase može vratiti List ili Map, obraditi oba slučaja
     if (raw is List) {
       return raw
           .where((e) => e != null)
-          .map((e) => Product.fromJson(
-                Map<String, dynamic>.from(e as Map),
-              ))
+          .map((e) => Product.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } else if (raw is Map) {
+      return raw.entries
+          .where((e) => e.value != null)
+          .map((e) => Product.fromJson(Map<String, dynamic>.from(e.value as Map)))
           .toList();
     }
+
     return [];
   }
 
@@ -52,18 +56,14 @@ class ProductService {
   // ADD PRODUCT
   // ===============================
   Future<void> addProduct(Product product) async {
-    await _productsRef
-        .child(product.id.toString())
-        .set(product.toJson());
+    await _productsRef.child(product.id.toString()).set(product.toJson());
   }
 
   // ===============================
   // UPDATE PRODUCT
   // ===============================
   Future<void> updateProduct(Product product) async {
-    await _productsRef
-        .child(product.id.toString())
-        .update(product.toJson());
+    await _productsRef.child(product.id.toString()).update(product.toJson());
   }
 
   // ===============================

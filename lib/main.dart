@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-import 'firebase_options.dart';
 import 'screens/splash_screen.dart';
 import 'viewmodels/product.dart';
 import 'viewmodels/category.dart';
-import 'providers/user_provider.dart'; // ← dodato
+import 'providers/user_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +17,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ProductViewModel()),
         Provider(create: (_) => CategoryViewModel()),
-        ChangeNotifierProvider(create: (_) => UserProvider()), // ← dodato
+        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: const MyApp(),
     ),

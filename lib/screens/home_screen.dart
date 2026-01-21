@@ -15,7 +15,7 @@ import 'package:first_app_flutter/viewmodels/category.dart';
 import 'package:first_app_flutter/models/category.dart';
 import 'package:first_app_flutter/models/product.dart';
 
-import '../providers/user_provider.dart'; // ← import UserProvider
+import '../providers/user_provider.dart';
 
 // --- Stubovi da ne baca Lookup failed ---
 class OrdersScreen extends StatelessWidget {
@@ -23,16 +23,19 @@ class OrdersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Orders Screen')));
 }
+
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
   @override
   Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Cart Screen')));
 }
+
 class UsersScreen extends StatelessWidget {
   const UsersScreen({super.key});
   @override
   Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Users Screen')));
 }
+
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
   @override
@@ -64,6 +67,15 @@ class _HomeScreenState extends State<HomeScreen>
     'assets/images/maskara.jpg',
   ];
 
+  final List<String> categories = [
+    'Šamponi',
+    'Losioni',
+    'Maske za kosu',
+    'Serumi',
+    'Gelovi',
+    'Boje za kosu',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +89,7 @@ class _HomeScreenState extends State<HomeScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
+    // Fetch proizvoda i kategorija
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ProductViewModel>(context, listen: false).fetchProducts();
       Provider.of<CategoryViewModel>(context, listen: false).fetchCategories();
@@ -109,10 +122,8 @@ class _HomeScreenState extends State<HomeScreen>
           );
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-          isSelected ? const Color(0xFFD87F7F) : const Color(0xFFD8B4B4),
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: isSelected ? const Color(0xFFD87F7F) : const Color(0xFFD8B4B4),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         child: Text(title, style: const TextStyle(color: Colors.white)),
       ),
@@ -174,187 +185,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // ← Ovde čitamo status gosta iz Provider-a
-    final bool isGuest = context.watch<UserProvider>().isGuest;
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5E8E8),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [
-          _buildHomeContent(),
-          const OrdersScreen(),
-          const CartScreen(),
-          const UsersScreen(),
-          const ProfileScreen(),
-        ],
-      ),
-      bottomNavigationBar: isGuest
-          ? null
-          : BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() => _currentIndex = index);
-        },
-        selectedItemColor: const Color(0xFFD87F7F),
-        unselectedItemColor: const Color(0xFFBFA1A1),
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.list_alt), label: 'Porudžbine'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart), label: 'Korpa'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Korisnici'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHomeContent() {
-    final productVM = Provider.of<ProductViewModel>(context);
-    final products = productVM.products;
-    final popularProducts = products.where((p) => p.popular).toList();
-
-    final bool isSearching = _searchQuery.trim().isNotEmpty;
-    final searchResults = products
-        .where((p) =>
-        p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
-        .toList();
-
-    Product? productWithId1;
-    if (products.isNotEmpty) {
-      try {
-        productWithId1 = products.firstWhere((p) => p.id == 1);
-      } catch (_) {
-        productWithId1 = products[0];
-      }
-    }
-
-    if (productVM.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 40),
-          Image.asset(
-            'assets/images/adora.jpg',
-            width: double.infinity,
-            height: 120,
-            fit: BoxFit.cover,
-          ),
-          const SizedBox(height: 15),
-          // SEARCH BAR
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              onChanged: (value) => setState(() => _searchQuery = value),
-              decoration: InputDecoration(
-                hintText: 'Pretraži proizvode...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          if (isSearching)
-            GridView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: searchResults.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.7,
-              ),
-              itemBuilder: (_, i) => _recommendedProductCard(searchResults[i]),
-            )
-          else ...[
-            SizedBox(
-              height: 200,
-              child: PageView(
-                controller: _pageController,
-                children: [
-                  _banner(banners[0],
-                      product: productWithId1, badgeText: '50% OFF'),
-                  _banner(banners[1],
-                      product: products.length > 1 ? products[1] : null),
-                  _banner(banners[2], badgeText: 'NOVO'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            Center(
-              child: SmoothPageIndicator(
-                controller: _pageController,
-                count: banners.length,
-                effect: const ExpandingDotsEffect(
-                  activeDotColor: Color(0xFFD87F7F),
-                  dotColor: Color(0xFFBFA1A1),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 50,
-              child: Consumer<CategoryViewModel>(
-                builder: (context, categoryVM, _) {
-                  if (categoryVM.isLoading.value) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  return ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: categoryVM.categories.value
-                        .map((c) => _categoryButton(id: c.id, title: c.name))
-                        .toList(),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'Izdvajamo za vas',
-                style: TextStyle(
-                  fontFamily: 'Spinnaker',
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFD87F7F),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 210,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: popularProducts.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (_, index) =>
-                    _recommendedProductCard(popularProducts[index]),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _banner(String imagePath, {Product? product, String? badgeText}) {
     return GestureDetector(
       onTap: () {
@@ -362,8 +192,8 @@ class _HomeScreenState extends State<HomeScreen>
           Navigator.push(
             context,
             MaterialPageRoute(
-                builder: (_) =>
-                    ProductDetailScreen(product: product, isAdmin: true)),
+              builder: (_) => ProductDetailScreen(product: product, isAdmin: true),
+            ),
           );
         }
       },
@@ -407,6 +237,182 @@ class _HomeScreenState extends State<HomeScreen>
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isGuest = context.watch<UserProvider>().isGuest;
+    final productVM = Provider.of<ProductViewModel>(context);
+    final products = productVM.products;
+    final popularProducts = products.where((p) => p.popular).toList();
+
+    final searchResults = _searchQuery.isEmpty
+        ? []
+        : products
+        .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5E8E8),
+      body: productVM.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 40),
+            /// LOGO
+            Image.asset(
+              'assets/images/adora.jpg',
+              width: double.infinity,
+              height: 120,
+              fit: BoxFit.cover,
+            ),
+            const SizedBox(height: 15),
+            /// PRETRAGA
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                onChanged: (value) {
+                  setState(() => _searchQuery = value);
+                },
+                decoration: InputDecoration(
+                  hintText: 'Pretraži proizvode...',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            /// AKTIVNA PRETRAGA
+            if (_searchQuery.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: searchResults.isEmpty
+                    ? const Text(
+                  'Nema proizvoda sa tim nazivom.',
+                  style: TextStyle(color: Colors.grey),
+                )
+                    : ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: searchResults.length,
+                  itemBuilder: (context, index) {
+                    final product = searchResults[index];
+                    return ListTile(
+                      leading: Image.network(
+                        product.imageUrl,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      ),
+                      title: Text(product.name),
+                      subtitle: Text('${product.price.toStringAsFixed(2)} RSD'),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProductDetailScreen(
+                              product: product,
+                              isAdmin: true,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+            /// NORMALAN HOME
+            if (_searchQuery.isEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  height: 50,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: categories
+                        .map((title) => _categoryButton(id: categories.indexOf(title), title: title))
+                        .toList(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 200,
+                child: PageView(
+                  controller: _pageController,
+                  children: [
+                    _banner(banners[0], product: products.isNotEmpty ? products[0] : null, badgeText: '50% OFF'),
+                    _banner(banners[1], product: products.length > 1 ? products[1] : null),
+                    _banner(banners[2], badgeText: 'NOVO'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              Center(
+                child: SmoothPageIndicator(
+                  controller: _pageController,
+                  count: banners.length,
+                  effect: const ExpandingDotsEffect(
+                    activeDotColor: Color(0xFFD87F7F),
+                    dotColor: Color(0xFFBFA1A1),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Izdvajamo za vas',
+                  style: TextStyle(
+                      fontFamily: 'Spinnaker',
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFD87F7F)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 210,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: popularProducts.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  itemBuilder: (_, index) =>
+                      _recommendedProductCard(popularProducts[index]),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      bottomNavigationBar: isGuest
+          ? null
+          : BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() => _currentIndex = index);
+        },
+        selectedItemColor: const Color(0xFFD87F7F),
+        unselectedItemColor: const Color(0xFFBFA1A1),
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Porudžbine'),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Korpa'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Korisnici'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+        ],
       ),
     );
   }

@@ -29,7 +29,6 @@ class Product {
     );
   }
 
-  // <<< DODAJ OVO >>>
   Map<String, dynamic> toJson() {
     return {
       'id': id,
