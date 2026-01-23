@@ -8,23 +8,14 @@ class CategoryService {
   Future<List<Category>> getCategories() async {
     final snapshot = await categoriesRef.get();
 
-    if (snapshot.exists) {
-      final Map data = snapshot.value as Map;
+    if (!snapshot.exists) return [];
 
-      // Filtriramo null vrednosti i mapiramo id kao int
-      return data.entries
-          .where((e) => e.value != null)
-          .map((e) {
-        final value = Map<String, dynamic>.from(e.value as Map);
-        return Category(
-          id: value['id'] is int
-              ? value['id']
-              : int.parse(value['id'].toString()),
-          name: value['name'].toString(),
-        );
-      }).toList();
-    }
+    // Firebase vraća List<dynamic> jer je JSON lista
+    final List data = snapshot.value as List;
 
-    return [];
+    return data
+        .where((e) => e != null)
+        .map((e) => Category.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
   }
 }

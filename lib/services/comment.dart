@@ -1,25 +1,68 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import '../models/comment.dart';
 
 class CommentService {
-  final CollectionReference commentsCollection =
-  FirebaseFirestore.instance.collection('comments');
+  final DatabaseReference _commentsRef =
+  FirebaseDatabase.instance.ref('Comments');
 
-  //Prikaz svih komentara
-  Future<List<Comment>> getComments(String productId) async {
-    var snapshot = await commentsCollection
-        .where('productId', isEqualTo: productId)
-        .get();
-    return snapshot.docs
-        .map((doc) => Comment.fromJson(doc.data() as Map<String, dynamic>))
-        .toList();
+  // ===============================
+  // GET COMMENTS FOR PRODUCT
+  // ===============================
+  Future<List<Comment>> getComments(int productId) async {
+    final snapshot = await _commentsRef.get();
+
+    if (!snapshot.exists) return [];
+
+    // Firebase vraća List ako je niz u JSON-u
+    final List<dynamic> data = snapshot.value as List<dynamic>;
+
+    final List<Comment> comments = [];
+
+    for (var commentMap in data) {
+      if (commentMap == null) continue; // preskoči null-ove
+      final map = Map<String, dynamic>.from(commentMap);
+
+      if (map['productId'] == productId) {
+        comments.add(Comment.fromJson(map));
+      }
+    }
+
+    return comments;
   }
-//Dodavanje komentara
+
+  // ===============================
+  // ADD COMMENT
+  // ===============================
   Future<void> addComment(Comment comment) async {
-    await commentsCollection.doc(comment.id.toString()).set(comment.toJson());
+    final snapshot = await _commentsRef.get();
+    List<dynamic> data = [];
+
+    if (snapshot.exists) {
+      data = List<dynamic>.from(snapshot.value as List<dynamic>);
+    }
+
+    // Dodaj novi komentar
+    data.add(comment.toJson());
+
+    await _commentsRef.set(data);
   }
-//Brisanje komentara
-  Future<void> deleteComment(String id) async {
-    await commentsCollection.doc(id).delete();
+
+  // ===============================
+  // DELETE COMMENT
+  // ===============================
+  Future<void> deleteComment(int id) async {
+    final snapshot = await _commentsRef.get();
+    if (!snapshot.exists) return;
+
+    List<dynamic> data = List<dynamic>.from(snapshot.value as List<dynamic>);
+
+    // Ukloni komentar sa zadatim ID
+    data.removeWhere((element) {
+      if (element == null) return false;
+      final map = Map<String, dynamic>.from(element);
+      return map['id'] == id;
+    });
+
+    await _commentsRef.set(data);
   }
 }

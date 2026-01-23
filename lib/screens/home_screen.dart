@@ -21,25 +21,29 @@ import '../providers/user_provider.dart';
 class OrdersScreen extends StatelessWidget {
   const OrdersScreen({super.key});
   @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Orders Screen')));
+  Widget build(BuildContext context) =>
+      const Scaffold(body: Center(child: Text('Orders Screen')));
 }
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
   @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Cart Screen')));
+  Widget build(BuildContext context) =>
+      const Scaffold(body: Center(child: Text('Cart Screen')));
 }
 
 class UsersScreen extends StatelessWidget {
   const UsersScreen({super.key});
   @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Users Screen')));
+  Widget build(BuildContext context) =>
+      const Scaffold(body: Center(child: Text('Users Screen')));
 }
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
   @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text('Profile Screen')));
+  Widget build(BuildContext context) =>
+      const Scaffold(body: Center(child: Text('Profile Screen')));
 }
 // -----------------------
 
@@ -65,15 +69,6 @@ class _HomeScreenState extends State<HomeScreen>
     'assets/images/bannerno1.jpg',
     'assets/images/bannerno2.jpg',
     'assets/images/maskara.jpg',
-  ];
-
-  final List<String> categories = [
-    'Šamponi',
-    'Losioni',
-    'Maske za kosu',
-    'Serumi',
-    'Gelovi',
-    'Boje za kosu',
   ];
 
   @override
@@ -103,29 +98,32 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
-  Widget _categoryButton({required int id, required String title}) {
-    final bool isSelected = _selectedCategoryId == id;
+  Widget _categoryButton(Category category) {
+    final bool isSelected = _selectedCategoryId == category.id;
 
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ElevatedButton(
         onPressed: () {
-          setState(() => _selectedCategoryId = id);
+          setState(() => _selectedCategoryId = category.id);
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => CategoryProductsScreen(
-                categoryId: id,
-                categoryName: title,
+                categoryId: category.id,
+                categoryName: category.name,
               ),
             ),
           );
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? const Color(0xFFD87F7F) : const Color(0xFFD8B4B4),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: isSelected
+              ? const Color(0xFFD87F7F)
+              : const Color(0xFFD8B4B4),
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
-        child: Text(title, style: const TextStyle(color: Colors.white)),
+        child: Text(category.name, style: const TextStyle(color: Colors.white)),
       ),
     );
   }
@@ -245,8 +243,12 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     final bool isGuest = context.watch<UserProvider>().isGuest;
     final productVM = Provider.of<ProductViewModel>(context);
-    final products = productVM.products;
-    final popularProducts = products.where((p) => p.popular).toList();
+    final categoryVM = Provider.of<CategoryViewModel>(context);
+
+    final List<Category> categories = categoryVM.categories.value;
+    final List<Product> products = productVM.products;
+    final List<Product> popularProducts =
+    products.where((p) => p.popular).toList();
 
     final searchResults = _searchQuery.isEmpty
         ? []
@@ -256,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen>
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5E8E8),
-      body: productVM.isLoading
+      body: (productVM.isLoading || categoryVM.isLoading.value)
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
         child: Column(
@@ -314,7 +316,8 @@ class _HomeScreenState extends State<HomeScreen>
                         fit: BoxFit.cover,
                       ),
                       title: Text(product.name),
-                      subtitle: Text('${product.price.toStringAsFixed(2)} RSD'),
+                      subtitle:
+                      Text('${product.price.toStringAsFixed(2)} RSD'),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -335,14 +338,37 @@ class _HomeScreenState extends State<HomeScreen>
             if (_searchQuery.isEmpty) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(
-                  height: 50,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: categories
-                        .map((title) => _categoryButton(id: categories.indexOf(title), title: title))
-                        .toList(),
-                  ),
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: categoryVM.isLoading,
+                  builder: (context, isLoading, _) {
+                    if (isLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    return ValueListenableBuilder<List<Category>>(
+                      valueListenable: categoryVM.categories,
+                      builder: (context, categories, _) {
+                        if (categories.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              'Nema kategorija.',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          );
+                        }
+
+                        return SizedBox(
+                          height: 50,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: categories
+                                .map((c) => _categoryButton(c))
+                                .toList(),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 20),
@@ -351,8 +377,11 @@ class _HomeScreenState extends State<HomeScreen>
                 child: PageView(
                   controller: _pageController,
                   children: [
-                    _banner(banners[0], product: products.isNotEmpty ? products[0] : null, badgeText: '50% OFF'),
-                    _banner(banners[1], product: products.length > 1 ? products[1] : null),
+                    _banner(banners[0],
+                        product: products.isNotEmpty ? products[0] : null,
+                        badgeText: '50% OFF'),
+                    _banner(banners[1],
+                        product: products.length > 1 ? products[1] : null),
                     _banner(banners[2], badgeText: 'NOVO'),
                   ],
                 ),
@@ -408,8 +437,10 @@ class _HomeScreenState extends State<HomeScreen>
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Porudžbine'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Korpa'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.list_alt), label: 'Porudžbine'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_cart), label: 'Korpa'),
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Korisnici'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
         ],

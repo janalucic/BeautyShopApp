@@ -13,10 +13,10 @@ class Comment {
 
   factory Comment.fromJson(Map<String, dynamic> json) {
     return Comment(
-      id: json['id'],
-      productId: json['productId'],
-      userId: json['userId'],
-      text: json['text'],
+      id: int.parse(json['id'].toString()),
+      productId: int.parse(json['productId'].toString()),
+      userId: int.parse(json['userId'].toString()),
+      text: json['text'].toString(),
     );
   }
 

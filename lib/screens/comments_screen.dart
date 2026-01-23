@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import 'login_screen.dart'; // ← DODATO
-
-class Comment {
-  final int id;
-  final int productId;
-  final String text;
-
-  Comment({required this.id, required this.productId, required this.text});
-}
+import '../viewmodels/comment.dart';
+import '../models/comment.dart';
+import 'login_screen.dart';
 
 class CommentsScreen extends StatefulWidget {
   final int productId;
@@ -24,16 +18,21 @@ class CommentsScreen extends StatefulWidget {
 class _CommentsScreenState extends State<CommentsScreen> {
   final TextEditingController _commentController = TextEditingController();
 
-  List<Comment> comments = [
-    Comment(id: 1, productId: 1, text: 'Odličan proizvod!'),
-    Comment(id: 2, productId: 1, text: 'Veoma sam zadovoljan.'),
-    Comment(id: 3, productId: 2, text: 'Može bolje.'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final commentVM = Provider.of<CommentViewModel>(context, listen: false);
+      commentVM.fetchComments(widget.productId);
+    });
+  }
 
-  void _addComment(String text) {
+  void _addComment(String text) async {
     if (text.trim().isEmpty) return;
 
-    final bool isGuest = context.read<UserProvider>().isGuest;
+    final userProvider = context.read<UserProvider>();
+    final bool isGuest = userProvider.isGuest;
+    final int userId = userProvider.userId ?? 0;
 
     if (isGuest) {
       showDialog(
@@ -89,21 +88,29 @@ class _CommentsScreenState extends State<CommentsScreen> {
       return;
     }
 
-    setState(() {
-      comments.add(Comment(
-        id: comments.length + 1,
-        productId: widget.productId,
-        text: text,
-      ));
-    });
+    final newComment = Comment(
+      id: DateTime.now().millisecondsSinceEpoch,
+      productId: widget.productId,
+      text: text,
+      userId: userId,
+    );
 
+    final commentVM = context.read<CommentViewModel>();
+    await commentVM.addComment(newComment);
     _commentController.clear();
+
+    // Scroll do poslednjeg komentara (opcionalno)
+    await Future.delayed(const Duration(milliseconds: 100));
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
 
   void _deleteComment(int id) {
-    setState(() {
-      comments.removeWhere((c) => c.id == id);
-    });
+    final commentVM = context.read<CommentViewModel>();
+    commentVM.deleteComment(id);
   }
 
   void _confirmDelete(Comment comment) {
@@ -115,9 +122,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
           'Potvrdi brisanje',
           style: TextStyle(color: Color(0xFFD87F7F)),
         ),
-        content: const Text(
-          'Da li ste sigurni da želite da obrišete ovaj komentar?',
-        ),
+        content: const Text('Da li ste sigurni da želite da obrišete ovaj komentar?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -138,12 +143,17 @@ class _CommentsScreenState extends State<CommentsScreen> {
     );
   }
 
+  final ScrollController _scrollController = ScrollController();
+
   @override
   Widget build(BuildContext context) {
-    final productComments =
-    comments.where((c) => c.productId == widget.productId).toList();
+    final commentVM = context.watch<CommentViewModel>();
+    final comments = commentVM.comments
+        .where((c) => c.productId == widget.productId)
+        .toList();
 
-    final bool isGuest = context.watch<UserProvider>().isGuest;
+    final userProvider = context.watch<UserProvider>();
+    final bool isGuest = userProvider.isGuest;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5E8E8),
@@ -157,15 +167,18 @@ class _CommentsScreenState extends State<CommentsScreen> {
       body: Column(
         children: [
           Expanded(
-            child: productComments.isEmpty
-                ? const Center(
-              child: Text('Nema komentara za ovaj proizvod.'),
-            )
+            child: commentVM.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : comments.isEmpty
+                ? const Center(child: Text('Nema komentara za ovaj proizvod.'))
                 : ListView.builder(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
-              itemCount: productComments.length,
+              itemCount: comments.length,
               itemBuilder: (context, index) {
-                final comment = productComments[index];
+                final comment = comments[index];
+                final userName = userProvider.getUserNameById(comment.userId);
+
                 return Card(
                   color: const Color(0xFFE3CFCF),
                   shape: RoundedRectangleBorder(
@@ -173,12 +186,17 @@ class _CommentsScreenState extends State<CommentsScreen> {
                   ),
                   child: ListTile(
                     title: Text(comment.text),
+                    subtitle: Text(
+                      userName,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[700],
+                      ),
+                    ),
                     trailing: (!isGuest && widget.isAdmin)
                         ? IconButton(
-                      icon: const Icon(Icons.delete,
-                          color: Color(0xFFD87F7F)),
-                      onPressed: () =>
-                          _confirmDelete(comment),
+                      icon: const Icon(Icons.delete, color: Color(0xFFD87F7F)),
+                      onPressed: () => _confirmDelete(comment),
                     )
                         : null,
                   ),

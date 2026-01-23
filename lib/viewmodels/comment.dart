@@ -9,7 +9,9 @@ class CommentViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // ===============================
   // GETTERS (za UI)
+  // ===============================
   List<Comment> get comments => _comments;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -23,7 +25,7 @@ class CommentViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _comments = await _commentService.getComments(productId.toString());
+      _comments = await _commentService.getComments(productId);
     } catch (e) {
       _errorMessage = 'Greška pri učitavanju komentara';
     } finally {
@@ -42,7 +44,7 @@ class CommentViewModel extends ChangeNotifier {
 
     try {
       await _commentService.addComment(comment);
-      _comments.add(comment);
+      _comments.add(comment); // lokalno dodavanje bez refetcha
     } catch (e) {
       _errorMessage = 'Greška pri dodavanju komentara';
     } finally {
@@ -60,7 +62,7 @@ class CommentViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _commentService.deleteComment(commentId.toString());
+      await _commentService.deleteComment(commentId); // <-- šalje int
       _comments.removeWhere((c) => c.id == commentId);
     } catch (e) {
       _errorMessage = 'Greška pri brisanju komentara';
@@ -70,8 +72,9 @@ class CommentViewModel extends ChangeNotifier {
     }
   }
 
+
   // ===============================
-  // CLEAR COMMENTS (optional)
+  // CLEAR COMMENTS
   // ===============================
   void clearComments() {
     _comments = [];

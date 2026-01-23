@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'comments_screen.dart';
 import 'login_screen.dart';
 import 'package:first_app_flutter/models/product.dart';
-import '../providers/user_provider.dart'; // ← import UserProvider
+import '../providers/user_provider.dart';
 
-class ProductDetailScreen extends StatelessWidget {
+class ProductDetailScreen extends StatefulWidget {
   final Product product;
   final bool isAdmin;
 
@@ -17,8 +17,15 @@ class ProductDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  int _quantity = 1;
+  bool _isDescriptionExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
-    // ← Čitamo status gosta iz Provider-a
     final bool isGuest = context.watch<UserProvider>().isGuest;
 
     return Scaffold(
@@ -40,97 +47,111 @@ class ProductDetailScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Back dugme
+                      // Fiksirani naziv + back dugme
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16.0, vertical: 10),
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back,
-                              color: Color(0xFFD87F7F)),
-                          onPressed: () => Navigator.pop(context),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back,
+                                  color: Color(0xFFD87F7F), size: 32),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                widget.product.name,
+                                style: const TextStyle(
+                                  fontFamily: 'Spinnaker',
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFD87F7F),
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 10),
 
-                      // Naziv proizvoda u belom okviru
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 0.0, vertical: 10),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 6,
-                                offset: const Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            product.name,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontFamily: 'Spinnaker',
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFD87F7F),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Slika proizvoda sa shadow i blur efektom
+                      // Slika proizvoda bez senki
                       Center(
-                        child: Container(
-                          width: 260,
-                          height: 260,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(25),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.pink.withOpacity(0.3),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(25),
-                            child: BackdropFilter(
-                              filter:
-                              ImageFilter.blur(sigmaX: 1.5, sigmaY: 1.5),
-                              child: Image.network(
-                                product.imageUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  color: Colors.white.withOpacity(0.6),
-                                  child: const Icon(Icons.image_not_supported,
-                                      color: Color(0xFFD87F7F)),
-                                ),
-                              ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(25),
+                          child: Image.network(
+                            widget.product.imageUrl,
+                            width: 260,
+                            height: 260,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: Colors.white.withOpacity(0.6),
+                              child: const Icon(Icons.image_not_supported,
+                                  color: Color(0xFFD87F7F)),
                             ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 20),
 
-                      // Opis proizvoda
+                      // Opis sa vidi više / vidi manje
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          product.description,
-                          textAlign: TextAlign.justify,
-                          style: const TextStyle(
-                            fontFamily: 'Spinnaker',
-                            fontSize: 16,
-                            color: Colors.black87,
-                            height: 1.5,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.product.description,
+                              textAlign: TextAlign.justify,
+                              style: const TextStyle(
+                                fontFamily: 'Spinnaker',
+                                fontSize: 16,
+                                color: Color(0xFFD87F7F),
+                                fontWeight: FontWeight.bold,
+                                height: 1.5,
+                              ),
+                              maxLines:
+                              _isDescriptionExpanded ? null : 3,
+                              overflow: _isDescriptionExpanded
+                                  ? TextOverflow.visible
+                                  : TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 5),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _isDescriptionExpanded =
+                                  !_isDescriptionExpanded;
+                                });
+                              },
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _isDescriptionExpanded
+                                        ? 'Prikaži manje'
+                                        : 'Vidi više',
+                                    style: const TextStyle(
+                                      color: Color(0xFF800020),
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.underline,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    _isDescriptionExpanded
+                                        ? Icons.keyboard_arrow_up
+                                        : Icons.keyboard_arrow_down,
+                                    color: const Color(0xFF800020),
+                                    size: 18,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 200),
@@ -146,6 +167,8 @@ class ProductDetailScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
+                    borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(25)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black12,
@@ -153,30 +176,64 @@ class ProductDetailScreen extends StatelessWidget {
                         offset: const Offset(0, -4),
                       ),
                     ],
-                    borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(25)),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Cena
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Text(
-                          'Cena: ${product.price.toStringAsFixed(2)} RSD',
-                          style: const TextStyle(
-                            fontFamily: 'Spinnaker',
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFD87F7F),
+                      // Kontrola količine
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              if (_quantity > 1) {
+                                setState(() => _quantity--);
+                              }
+                            },
+                            icon: const Icon(Icons.remove_circle_outline,
+                                color: Color(0xFFD87F7F), size: 30),
                           ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 8),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: const Color(0xFFD87F7F)),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '$_quantity',
+                              style: const TextStyle(
+                                fontFamily: 'Spinnaker',
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFD87F7F),
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => setState(() => _quantity++),
+                            icon: const Icon(Icons.add_circle_outline,
+                                color: Color(0xFFD87F7F), size: 30),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Cena
+                      Text(
+                        'Cena: ${(widget.product.price * _quantity).toStringAsFixed(2)} RSD',
+                        style: const TextStyle(
+                          fontFamily: 'Spinnaker',
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFD87F7F),
                         ),
                       ),
+                      const SizedBox(height: 12),
 
-                      // Dugmad sa gradientom
+                      // Dugmad Vidi komentare i Dodaj u korpu
                       Row(
                         children: [
-                          // Vidi komentare
                           Expanded(
                             child: InkWell(
                               onTap: () {
@@ -184,8 +241,8 @@ class ProductDetailScreen extends StatelessWidget {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => CommentsScreen(
-                                        productId: product.id,
-                                        isAdmin: isAdmin),
+                                        productId: widget.product.id,
+                                        isAdmin: widget.isAdmin),
                                   ),
                                 );
                               },
@@ -204,38 +261,40 @@ class ProductDetailScreen extends StatelessWidget {
                                     end: Alignment.bottomRight,
                                   ),
                                 ),
-                                child: const Center(
-                                  child: Text(
-                                    'Vidi komentare',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: 'Spinnaker',
-                                        fontWeight: FontWeight.bold),
-                                  ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Icon(Icons.comment, color: Colors.white),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Vidi komentare',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontFamily: 'Spinnaker',
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
                           const SizedBox(width: 10),
-
-                          // Dodaj u korpu
                           Expanded(
                             child: InkWell(
                               borderRadius: BorderRadius.circular(20),
                               onTap: () {
                                 if (isGuest) {
-                                  // Ako je gost, otvori dijalog za prijavu/registraciju
                                   showDialog(
                                     context: context,
                                     builder: (context) => AlertDialog(
-                                      backgroundColor: const Color(0xFFFFC1CC), // svetlo roza
+                                      backgroundColor: const Color(0xFFFFC1CC),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(25),
                                       ),
                                       title: const Text(
                                         'Prijavite se',
                                         style: TextStyle(
-                                          color: Color(0xFF800020), // bordo
+                                          color: Color(0xFF800020),
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -247,24 +306,11 @@ class ProductDetailScreen extends StatelessWidget {
                                       ),
                                       actions: [
                                         TextButton(
-                                          style: TextButton.styleFrom(
-                                            foregroundColor:
-                                            const Color(0xFF800020),
-                                          ),
-                                          onPressed: () => Navigator.pop(context),
+                                          onPressed: () =>
+                                              Navigator.pop(context),
                                           child: const Text('Otkaži'),
                                         ),
                                         ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                            const Color(0xFFD87F7F),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                              BorderRadius.circular(20),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 20, vertical: 12),
-                                          ),
                                           onPressed: () {
                                             Navigator.pop(context);
                                             Navigator.pushReplacement(
@@ -274,6 +320,14 @@ class ProductDetailScreen extends StatelessWidget {
                                                   const LoginScreen()),
                                             );
                                           },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                            const Color(0xFFD87F7F),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                              BorderRadius.circular(20),
+                                            ),
+                                          ),
                                           child: const Text(
                                             'Prijavi se',
                                             style: TextStyle(
@@ -286,10 +340,10 @@ class ProductDetailScreen extends StatelessWidget {
                                     ),
                                   );
                                 } else {
-                                  // Ako nije gost, obaveštenje
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                        content: Text('Proizvod dodat u korpu!')),
+                                        content:
+                                        Text('Proizvod dodat u korpu!')),
                                   );
                                 }
                               },
@@ -307,14 +361,20 @@ class ProductDetailScreen extends StatelessWidget {
                                     end: Alignment.bottomRight,
                                   ),
                                 ),
-                                child: const Center(
-                                  child: Text(
-                                    'Dodaj u korpu',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontFamily: 'Spinnaker',
-                                        fontWeight: FontWeight.bold),
-                                  ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Icon(Icons.shopping_cart,
+                                        color: Colors.white),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Dodaj u korpu',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontFamily: 'Spinnaker',
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),

@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'screens/splash_screen.dart';
 import 'viewmodels/product.dart';
 import 'viewmodels/category.dart';
+import 'viewmodels/comment.dart'; // ✅ DODAT IMPORT
 import 'providers/user_provider.dart';
 
 void main() async {
@@ -18,6 +19,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ProductViewModel()),
         Provider(create: (_) => CategoryViewModel()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => CommentViewModel()), // ✅ sada radi
       ],
       child: const MyApp(),
     ),
