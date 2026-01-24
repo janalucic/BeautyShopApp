@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart'; // ispravan path
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -8,53 +10,89 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Statički podaci korisnika
-  String userName = 'Ana Petrović';
-  String userEmail = 'user@gmail.com';
-  String userAddress = 'Bulevar Kralja Aleksandra 12';
-  String userPhone = '+381 64 123 4567';
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _phoneController = TextEditingController();
+
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _addressController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadUserData() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    await userProvider.initUser();
+
+    final user = userProvider.currentUser;
+    if (user != null) {
+      _nameController.text = user.name;
+      _emailController.text = user.email;
+      _addressController.text = user.adresa ?? '';
+      _phoneController.text = user.telefon ?? '';
+    }
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+
     return Scaffold(
       body: Stack(
         children: [
           // Pozadinska slika
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               image: DecorationImage(
                 image: AssetImage('assets/images/profilepic.jpg'),
                 fit: BoxFit.cover,
               ),
             ),
           ),
-          // Poluprovidni overlay
-          Container(
-            color: Colors.black.withOpacity(0.3),
-          ),
+          Container(color: Colors.black.withOpacity(0.3)),
           SafeArea(
-            child: Column(
+            child: _isLoading
+                ? const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFFD87F7F),
+              ),
+            )
+                : Column(
               children: [
                 const SizedBox(height: 20),
-
-                // Dugme za povratak
                 Align(
                   alignment: Alignment.topLeft,
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ),
-
                 const Spacer(),
-
-                // Poluprovidni okvir sa podacima
                 Center(
                   child: Container(
                     padding: const EdgeInsets.all(30),
-                    margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 40),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.85),
                       borderRadius: BorderRadius.circular(25),
@@ -63,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          userName,
+                          userProvider.currentUser?.name ?? 'Nepoznat',
                           style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
@@ -72,7 +110,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          userEmail,
+                          userProvider.currentUser?.email ?? '',
                           style: const TextStyle(
                             fontSize: 18,
                             color: Color(0xFFBFA1A1),
@@ -80,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          userAddress,
+                          userProvider.currentUser?.adresa ?? '',
                           style: const TextStyle(
                             fontSize: 16,
                             color: Color(0xFFBFA1A1),
@@ -88,7 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          userPhone,
+                          userProvider.currentUser?.telefon ?? '',
                           style: const TextStyle(
                             fontSize: 16,
                             color: Color(0xFFBFA1A1),
@@ -96,13 +134,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 30),
                         ElevatedButton(
-                          onPressed: () {
-                            _showEditDialog(context);
-                          },
+                          onPressed: () => _showEditDialog(context),
                           style: ButtonStyle(
-                            backgroundColor: MaterialStatePropertyAll(Color(0xFFD87F7F)),
-                            padding: MaterialStatePropertyAll(
-                              const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                            backgroundColor: const MaterialStatePropertyAll(
+                                Color(0xFFD87F7F)),
+                            padding: const MaterialStatePropertyAll(
+                              EdgeInsets.symmetric(
+                                  horizontal: 40, vertical: 15),
                             ),
                             shape: MaterialStatePropertyAll(
                               RoundedRectangleBorder(
@@ -112,7 +150,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           child: const Text(
                             'Uredite svoj profil',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
+                            style: TextStyle(
+                                fontSize: 18, color: Colors.white),
                           ),
                         ),
                       ],
@@ -128,10 +167,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showEditDialog(BuildContext context) {
-    String tempName = userName;
-    String tempEmail = userEmail;
-    String tempAddress = userAddress;
-    String tempPhone = userPhone;
+    _nameController.text = _nameController.text;
+    _emailController.text = _emailController.text;
+    _addressController.text = _addressController.text;
+    _phoneController.text = _phoneController.text;
 
     showDialog(
       context: context,
@@ -146,28 +185,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildTextField('Ime i prezime', tempName, (val) => tempName = val),
-                _buildTextField('Email', tempEmail, (val) => tempEmail = val),
-                _buildTextField('Adresa', tempAddress, (val) => tempAddress = val),
-                _buildTextField('Broj telefona', tempPhone, (val) => tempPhone = val),
+                _buildTextField('Ime i prezime', _nameController),
+                _buildTextField('Email', _emailController),
+                _buildTextField('Adresa', _addressController),
+                _buildTextField('Broj telefona', _phoneController),
               ],
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
+              onPressed: () => Navigator.pop(context),
               child: const Text('Odustani', style: TextStyle(color: Colors.white)),
             ),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  userName = tempName;
-                  userEmail = tempEmail;
-                  userAddress = tempAddress;
-                  userPhone = tempPhone;
-                });
+              onPressed: () async {
+                final userProvider =
+                Provider.of<UserProvider>(context, listen: false);
+                final user = userProvider.currentUser;
+                if (user == null) return;
+
+                // Update u bazi
+                try {
+                  await userProvider.updateCurrentUser(
+                    name: _nameController.text,
+                    email: _emailController.text,
+                    adresa: _addressController.text,
+                    telefon: _phoneController.text,
+                  );
+                } catch (e) {
+                  print('Greška pri update-u korisnika: $e');
+                }
+
                 Navigator.pop(context);
               },
               style: const ButtonStyle(
@@ -184,7 +232,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildTextField(String label, String initialValue, Function(String) onChanged) {
+  Widget _buildTextField(String label, TextEditingController controller) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: TextField(
@@ -199,8 +247,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderSide: BorderSide(color: Colors.white),
           ),
         ),
-        controller: TextEditingController(text: initialValue),
-        onChanged: onChanged,
+        controller: controller,
       ),
     );
   }

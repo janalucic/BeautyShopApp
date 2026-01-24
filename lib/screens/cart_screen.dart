@@ -1,173 +1,352 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import '../providers/cart_provider.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          //  POZADINSKA SLIKA
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/korpa5.png'),
-                fit: BoxFit.cover,
+    return Consumer<CartProvider>(
+      builder: (context, cartProvider, _) {
+        final cartItems = cartProvider.cartItems;
+        final totalPrice = cartItems.fold<double>(
+          0,
+              (sum, item) => sum + item.product.price * item.quantity,
+        );
+
+        return Scaffold(
+          body: Stack(
+            children: [
+              // POZADINSKA SLIKA
+              Container(
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/korpa5.png'),
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
-            ),
-          ),
-
-          //   OVERLAY
-          Container(
-            color: Colors.black.withOpacity(0.25),
-          ),
-
-          SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-
-                // 🔙 BACK + NASLOV
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
-                        onPressed: () => Navigator.pop(context),
+              // OVERLAY
+              Container(
+                color: Colors.black.withOpacity(0.25),
+              ),
+              SafeArea(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    // BACK + NASLOV
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back,
+                                color: Colors.white, size: 28),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          const Expanded(
+                            child: Center(
+                              child: Text(
+                                'Vaša korpa',
+                                style: TextStyle(
+                                  fontFamily: 'Spinnaker',
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 48),
+                        ],
                       ),
-                      const Expanded(
-                        child: Center(
-                          child: Text(
-                            'Vaša korpa',
-                            style: TextStyle(
-                              fontFamily: 'Spinnaker',
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              letterSpacing: 0.8,
+                    ),
+                    const SizedBox(height: 30),
+
+                    // GLAVNI GLASS CARD
+                    Expanded(
+                      child: cartItems.isEmpty
+                          ? Center(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(30),
+                          child: BackdropFilter(
+                            filter:
+                            ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                            child: Container(
+                              margin:
+                              const EdgeInsets.symmetric(horizontal: 20),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 40),
+                              decoration: BoxDecoration(
+                                color: const Color.fromRGBO(
+                                    255, 255, 255, 0.1),
+                                borderRadius: BorderRadius.circular(30),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.1),
+                                ),
+                              ),
+                              child: Column(
+                                mainAxisAlignment:
+                                MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.shopping_bag_outlined,
+                                    size: 80,
+                                    color: Color(0xFFFF5DA2),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  const Text(
+                                    'Vaša korpa je trenutno prazna',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontFamily: 'Spinnaker',
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFFF5DA2),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'Dodajte proizvode i vratite se ovde',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 40),
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                      const Color(0xFFFF5DA2),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 40, vertical: 14),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                        BorderRadius.circular(25),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Nazad na kupovinu',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 48),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                // 🛒 GLAVNI GLASS CARD – potpuno proziran
-                Expanded(
-                  child: Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 20),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-                          decoration: BoxDecoration(
-                            color: const Color.fromRGBO(255, 255, 255, 0.1),
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.1),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.25),
-                                blurRadius: 15,
-                                offset: const Offset(0, 8),
+                      )
+                          : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: cartItems.length,
+                        itemBuilder: (context, index) {
+                          final item = cartItems[index];
+                          return Card(
+                            color: Colors.white.withOpacity(0.15),
+                            margin:
+                            const EdgeInsets.symmetric(vertical: 8),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              leading: Image.network(
+                                item.product.imageUrl,
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
                               ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // 🛍 ICON
-                              const Icon(
-                                Icons.shopping_bag_outlined,
-                                size: 80,
-                                color: Color(0xFFFF5DA2),
+                              title: Text(
+                                item.product.name,
+                                style: const TextStyle(color: Colors.white),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-
-                              const SizedBox(height: 24),
-
-                              // 💖 TEKST
-                              const Text(
-                                'Vaša korpa je trenutno prazna',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontFamily: 'Spinnaker',
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFFFF5DA2), // Barbie pink
-                                  letterSpacing: 0.6,
-                                  shadows: [
-                                    Shadow(
-                                      blurRadius: 6,
-                                      color: Colors.black45,
-                                      offset: Offset(1, 2),
+                              subtitle: Text(
+                                '${item.product.price.toStringAsFixed(2)} RSD',
+                                style:
+                                const TextStyle(color: Colors.white70),
+                              ),
+                              trailing: SizedBox(
+                                width: 170,
+                                child: Row(
+                                  mainAxisAlignment:
+                                  MainAxisAlignment.end,
+                                  children: [
+                                    // Smanji količinu
+                                    IconButton(
+                                      onPressed: () => cartProvider
+                                          .decreaseQuantity(item.product),
+                                      icon: const Icon(
+                                          Icons.remove_circle_outline,
+                                          color: Colors.white),
+                                    ),
+                                    // Prikaz količine
+                                    Text(
+                                      '${item.quantity}',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    // Povećaj količinu
+                                    IconButton(
+                                      onPressed: () => cartProvider
+                                          .increaseQuantity(item.product),
+                                      icon: const Icon(
+                                          Icons.add_circle_outline,
+                                          color: Colors.white),
+                                    ),
+                                    // Dugme za brisanje sa dijalogom
+                                    IconButton(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title:
+                                            const Text('Obriši proizvod?'),
+                                            content: const Text(
+                                                'Da li ste sigurni da želite da obrišete ovaj proizvod iz korpe?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.pop(context),
+                                                child: const Text('Otkaži'),
+                                              ),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                  const Color(0xFFFF5DA2),
+                                                ),
+                                                onPressed: () {
+                                                  cartProvider.removeFromCart(
+                                                      item.product.id);
+                                                  Navigator.pop(context);
+                                                },
+                                                child: const Text(
+                                                    'Obriši',
+                                                    style: TextStyle(
+                                                        color:
+                                                        Colors.white)),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.delete,
+                                          color: Color(0xFFFF5DA2)),
                                     ),
                                   ],
                                 ),
                               ),
-
-                              const SizedBox(height: 12),
-
-                              const Text(
-                                'Dodajte proizvode i vratite se ovde ',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.white70,
-                                ),
-                              ),
-
-                              const SizedBox(height: 40),
-
-                              // 🎀 DUGME
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFFF5DA2),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 40,
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(25),
-                                  ),
-                                  elevation: 8,
-                                ),
-                                child: const Text(
-                                  'Nazad na kupovinu',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                            ),
+                          );
+                        },
                       ),
                     ),
-                  ),
-                ),
 
-                const SizedBox(height: 30),
-              ],
-            ),
+                    // TOTAL I ZAVRŠI KUPOVINU DUGME
+                    if (cartItems.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 16),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Ukupno:',
+                                  style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white),
+                                ),
+                                Text(
+                                  '${totalPrice.toStringAsFixed(2)} RSD',
+                                  style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () async {
+                                // Kreiranje porudžbine
+                                final order = {
+                                  'id': DateTime.now().millisecondsSinceEpoch,
+                                  'items': cartItems.map((item) => {
+                                    'productId': item.product.id,
+                                    'price': item.product.price,
+                                    'quantity': item.quantity,
+                                  }).toList(),
+                                  'status': 'obrađuje se',
+                                  'totalPrice': totalPrice,
+                                  'userId': FirebaseAuth.instance.currentUser?.uid,
+                                };
+
+                                try {
+                                  // Sačuvaj order u bazi
+                                  await FirebaseDatabase.instance
+                                      .ref('Orders')
+                                      .push()
+                                      .set(order);
+
+                                  // Očisti korpu
+                                  await cartProvider.clearCart();
+
+                                  // Prikaz poruke korisniku
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'Vaša porudžbina je evidentirana!'),
+                                      backgroundColor: Colors.pink,
+                                    ),
+                                  );
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          'Došlo je do greške prilikom evidentiranja porudžbine.'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF5DA2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 40, vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25)),
+                              ),
+                              child: const Text(
+                                'Završi kupovinu',
+                                style: TextStyle(
+                                    fontSize: 16, color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

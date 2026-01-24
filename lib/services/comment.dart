@@ -23,6 +23,7 @@ class CommentService {
       final map = Map<String, dynamic>.from(commentMap);
 
       if (map['productId'] == productId) {
+        // userId sada je String (Firebase uid), nema int.parse
         comments.add(Comment.fromJson(map));
       }
     }

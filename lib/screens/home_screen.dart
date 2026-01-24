@@ -17,36 +17,6 @@ import 'package:first_app_flutter/models/product.dart';
 
 import '../providers/user_provider.dart';
 
-// --- Stubovi da ne baca Lookup failed ---
-class OrdersScreen extends StatelessWidget {
-  const OrdersScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text('Orders Screen')));
-}
-
-class CartScreen extends StatelessWidget {
-  const CartScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text('Cart Screen')));
-}
-
-class UsersScreen extends StatelessWidget {
-  const UsersScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text('Users Screen')));
-}
-
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text('Profile Screen')));
-}
-// -----------------------
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -84,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
-    // Fetch proizvoda i kategorija
+    // Fetch proizvoda i kategorija u post-frame callback
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ProductViewModel>(context, listen: false).fetchProducts();
       Provider.of<CategoryViewModel>(context, listen: false).fetchCategories();
@@ -256,11 +226,9 @@ class _HomeScreenState extends State<HomeScreen>
         .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5E8E8),
-      body: (productVM.isLoading || categoryVM.isLoading.value)
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+    // Lista ekrana za bottom nav sa pravim ekranima
+    final List<Widget> _screens = [
+      SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -293,80 +261,29 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
             const SizedBox(height: 20),
-            /// AKTIVNA PRETRAGA
-            if (_searchQuery.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: searchResults.isEmpty
-                    ? const Text(
-                  'Nema proizvoda sa tim nazivom.',
-                  style: TextStyle(color: Colors.grey),
-                )
-                    : ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: searchResults.length,
-                  itemBuilder: (context, index) {
-                    final product = searchResults[index];
-                    return ListTile(
-                      leading: Image.network(
-                        product.imageUrl,
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                      ),
-                      title: Text(product.name),
-                      subtitle:
-                      Text('${product.price.toStringAsFixed(2)} RSD'),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ProductDetailScreen(
-                              product: product,
-                              isAdmin: true,
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-            /// NORMALAN HOME
             if (_searchQuery.isEmpty) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ValueListenableBuilder<bool>(
-                  valueListenable: categoryVM.isLoading,
-                  builder: (context, isLoading, _) {
-                    if (isLoading) {
-                      return const Center(child: CircularProgressIndicator());
+                child: ValueListenableBuilder<List<Category>>(
+                  valueListenable: categoryVM.categories,
+                  builder: (context, categories, _) {
+                    if (categories.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'Nema kategorija.',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      );
                     }
 
-                    return ValueListenableBuilder<List<Category>>(
-                      valueListenable: categoryVM.categories,
-                      builder: (context, categories, _) {
-                        if (categories.isEmpty) {
-                          return const Center(
-                            child: Text(
-                              'Nema kategorija.',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          );
-                        }
-
-                        return SizedBox(
-                          height: 50,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: categories
-                                .map((c) => _categoryButton(c))
-                                .toList(),
-                          ),
-                        );
-                      },
+                    return SizedBox(
+                      height: 50,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: categories
+                            .map((c) => _categoryButton(c))
+                            .toList(),
+                      ),
                     );
                   },
                 ),
@@ -425,6 +342,14 @@ class _HomeScreenState extends State<HomeScreen>
           ],
         ),
       ),
+      const OrdersScreen(),
+      const CartScreen(),
+      const ProfileScreen(),
+    ];
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5E8E8),
+      body: _screens[_currentIndex],
       bottomNavigationBar: isGuest
           ? null
           : BottomNavigationBar(
@@ -441,8 +366,8 @@ class _HomeScreenState extends State<HomeScreen>
               icon: Icon(Icons.list_alt), label: 'Porudžbine'),
           BottomNavigationBarItem(
               icon: Icon(Icons.shopping_cart), label: 'Korpa'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Korisnici'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.person), label: 'Profil'),
         ],
       ),
     );

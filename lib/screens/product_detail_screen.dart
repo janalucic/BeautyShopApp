@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'comments_screen.dart';
 import 'login_screen.dart';
+import 'cart_screen.dart';
 import 'package:first_app_flutter/models/product.dart';
 import '../providers/user_provider.dart';
+import '../providers/cart_provider.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -27,6 +29,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final bool isGuest = context.watch<UserProvider>().isGuest;
+    final cartProvider = context.watch<CartProvider>();
 
     return Scaffold(
       body: Container(
@@ -49,13 +52,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     children: [
                       // Fiksirani naziv + back dugme
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
                         child: Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.arrow_back,
-                                  color: Color(0xFFD87F7F), size: 32),
+                              icon: const Icon(Icons.arrow_back, color: Color(0xFFD87F7F), size: 32),
                               onPressed: () => Navigator.pop(context),
                             ),
                             const SizedBox(width: 10),
@@ -77,7 +78,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       const SizedBox(height: 10),
 
-                      // Slika proizvoda bez senki
+                      // Slika proizvoda
                       Center(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(25),
@@ -88,8 +89,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
                               color: Colors.white.withOpacity(0.6),
-                              child: const Icon(Icons.image_not_supported,
-                                  color: Color(0xFFD87F7F)),
+                              child: const Icon(Icons.image_not_supported, color: Color(0xFFD87F7F)),
                             ),
                           ),
                         ),
@@ -112,27 +112,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 fontWeight: FontWeight.bold,
                                 height: 1.5,
                               ),
-                              maxLines:
-                              _isDescriptionExpanded ? null : 3,
-                              overflow: _isDescriptionExpanded
-                                  ? TextOverflow.visible
-                                  : TextOverflow.ellipsis,
+                              maxLines: _isDescriptionExpanded ? null : 3,
+                              overflow: _isDescriptionExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 5),
                             GestureDetector(
                               onTap: () {
-                                setState(() {
-                                  _isDescriptionExpanded =
-                                  !_isDescriptionExpanded;
-                                });
+                                setState(() => _isDescriptionExpanded = !_isDescriptionExpanded);
                               },
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    _isDescriptionExpanded
-                                        ? 'Prikaži manje'
-                                        : 'Vidi više',
+                                    _isDescriptionExpanded ? 'Prikaži manje' : 'Vidi više',
                                     style: const TextStyle(
                                       color: Color(0xFF800020),
                                       fontWeight: FontWeight.bold,
@@ -142,9 +134,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                   Icon(
-                                    _isDescriptionExpanded
-                                        ? Icons.keyboard_arrow_up
-                                        : Icons.keyboard_arrow_down,
+                                    _isDescriptionExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                                     color: const Color(0xFF800020),
                                     size: 18,
                                   ),
@@ -167,8 +157,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(25)),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black12,
@@ -185,17 +174,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
-                            onPressed: () {
-                              if (_quantity > 1) {
-                                setState(() => _quantity--);
-                              }
-                            },
-                            icon: const Icon(Icons.remove_circle_outline,
-                                color: Color(0xFFD87F7F), size: 30),
+                            onPressed: () { if (_quantity > 1) setState(() => _quantity--); },
+                            icon: const Icon(Icons.remove_circle_outline, color: Color(0xFFD87F7F), size: 30),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                             decoration: BoxDecoration(
                               border: Border.all(color: const Color(0xFFD87F7F)),
                               borderRadius: BorderRadius.circular(20),
@@ -212,8 +195,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                           IconButton(
                             onPressed: () => setState(() => _quantity++),
-                            icon: const Icon(Icons.add_circle_outline,
-                                color: Color(0xFFD87F7F), size: 30),
+                            icon: const Icon(Icons.add_circle_outline, color: Color(0xFFD87F7F), size: 30),
                           ),
                         ],
                       ),
@@ -241,22 +223,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => CommentsScreen(
-                                        productId: widget.product.id,
-                                        isAdmin: widget.isAdmin),
+                                      productId: widget.product.id,
+                                      isAdmin: widget.isAdmin,
+                                    ),
                                   ),
                                 );
                               },
                               borderRadius: BorderRadius.circular(20),
                               child: Container(
-                                padding:
-                                const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(20),
                                   gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFFD87F7F),
-                                      Color(0xFFF5A9A9)
-                                    ],
+                                    colors: [Color(0xFFD87F7F), Color(0xFFF5A9A9)],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
@@ -282,7 +261,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           Expanded(
                             child: InkWell(
                               borderRadius: BorderRadius.circular(20),
-                              onTap: () {
+                              onTap: () async {
                                 if (isGuest) {
                                   showDialog(
                                     context: context,
@@ -306,8 +285,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       ),
                                       actions: [
                                         TextButton(
-                                          onPressed: () =>
-                                              Navigator.pop(context),
+                                          onPressed: () => Navigator.pop(context),
                                           child: const Text('Otkaži'),
                                         ),
                                         ElevatedButton(
@@ -316,16 +294,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                             Navigator.pushReplacement(
                                               context,
                                               MaterialPageRoute(
-                                                  builder: (_) =>
-                                                  const LoginScreen()),
+                                                  builder: (_) => const LoginScreen()),
                                             );
                                           },
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                            const Color(0xFFD87F7F),
+                                            backgroundColor: const Color(0xFFD87F7F),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                              BorderRadius.circular(20),
+                                              borderRadius: BorderRadius.circular(20),
                                             ),
                                           ),
                                           child: const Text(
@@ -340,23 +315,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     ),
                                   );
                                 } else {
+                                  // Dodaj proizvod u CartProvider
+                                  await cartProvider.addToCart(widget.product, _quantity);
+
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                        content:
-                                        Text('Proizvod dodat u korpu!')),
+                                    const SnackBar(content: Text('Proizvod dodat u korpu!')),
                                   );
                                 }
                               },
                               child: Container(
-                                padding:
-                                const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(20),
                                   gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFFD87F7F),
-                                      Color(0xFFF5A9A9)
-                                    ],
+                                    colors: [Color(0xFFD87F7F), Color(0xFFF5A9A9)],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
@@ -364,8 +336,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: const [
-                                    Icon(Icons.shopping_cart,
-                                        color: Colors.white),
+                                    Icon(Icons.shopping_cart, color: Colors.white),
                                     SizedBox(width: 6),
                                     Text(
                                       'Dodaj u korpu',

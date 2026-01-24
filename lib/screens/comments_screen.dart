@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../providers/user_provider.dart';
 import '../viewmodels/comment.dart';
 import '../models/comment.dart';
@@ -9,7 +11,11 @@ class CommentsScreen extends StatefulWidget {
   final int productId;
   final bool isAdmin;
 
-  const CommentsScreen({super.key, required this.productId, this.isAdmin = false});
+  const CommentsScreen({
+    super.key,
+    required this.productId,
+    this.isAdmin = false,
+  });
 
   @override
   State<CommentsScreen> createState() => _CommentsScreenState();
@@ -17,24 +23,26 @@ class CommentsScreen extends StatefulWidget {
 
 class _CommentsScreenState extends State<CommentsScreen> {
   final TextEditingController _commentController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final commentVM = Provider.of<CommentViewModel>(context, listen: false);
+      final commentVM = context.read<CommentViewModel>();
       commentVM.fetchComments(widget.productId);
     });
   }
 
+  // ===============================
+  // ADD COMMENT
+  // ===============================
   void _addComment(String text) async {
     if (text.trim().isEmpty) return;
 
     final userProvider = context.read<UserProvider>();
-    final bool isGuest = userProvider.isGuest;
-    final int userId = userProvider.userId ?? 0;
 
-    if (isGuest) {
+    if (userProvider.isGuest) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -72,9 +80,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
                 Navigator.pop(context);
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const LoginScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
                 );
               },
               child: const Text(
@@ -88,18 +94,22 @@ class _CommentsScreenState extends State<CommentsScreen> {
       return;
     }
 
+    final String uid = FirebaseAuth.instance.currentUser!.uid;
+
+    // NOVO: dodajemo userName iz UserProvider
     final newComment = Comment(
       id: DateTime.now().millisecondsSinceEpoch,
       productId: widget.productId,
+      userId: uid,
+      userName: userProvider.currentUser!.name, // 👈 dodato
       text: text,
-      userId: userId,
     );
 
     final commentVM = context.read<CommentViewModel>();
     await commentVM.addComment(newComment);
+
     _commentController.clear();
 
-    // Scroll do poslednjeg komentara (opcionalno)
     await Future.delayed(const Duration(milliseconds: 100));
     _scrollController.animateTo(
       _scrollController.position.maxScrollExtent,
@@ -108,61 +118,19 @@ class _CommentsScreenState extends State<CommentsScreen> {
     );
   }
 
-  void _deleteComment(int id) {
-    final commentVM = context.read<CommentViewModel>();
-    commentVM.deleteComment(id);
-  }
-
-  void _confirmDelete(Comment comment) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFFF5E8E8),
-        title: const Text(
-          'Potvrdi brisanje',
-          style: TextStyle(color: Color(0xFFD87F7F)),
-        ),
-        content: const Text('Da li ste sigurni da želite da obrišete ovaj komentar?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Otkaži'),
-          ),
-          TextButton(
-            onPressed: () {
-              _deleteComment(comment.id);
-              Navigator.pop(context);
-            },
-            child: const Text(
-              'Obriši',
-              style: TextStyle(color: Color(0xFFD87F7F)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  final ScrollController _scrollController = ScrollController();
-
   @override
   Widget build(BuildContext context) {
     final commentVM = context.watch<CommentViewModel>();
+
     final comments = commentVM.comments
         .where((c) => c.productId == widget.productId)
         .toList();
-
-    final userProvider = context.watch<UserProvider>();
-    final bool isGuest = userProvider.isGuest;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5E8E8),
       appBar: AppBar(
         backgroundColor: const Color(0xFFD87F7F),
-        title: const Text(
-          'Komentari',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('Komentari', style: TextStyle(color: Colors.white)),
       ),
       body: Column(
         children: [
@@ -177,7 +145,6 @@ class _CommentsScreenState extends State<CommentsScreen> {
               itemCount: comments.length,
               itemBuilder: (context, index) {
                 final comment = comments[index];
-                final userName = userProvider.getUserNameById(comment.userId);
 
                 return Card(
                   color: const Color(0xFFE3CFCF),
@@ -187,18 +154,13 @@ class _CommentsScreenState extends State<CommentsScreen> {
                   child: ListTile(
                     title: Text(comment.text),
                     subtitle: Text(
-                      userName,
+                      comment.userName, // 👈 koristimo userName direktno
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[700],
                       ),
                     ),
-                    trailing: (!isGuest && widget.isAdmin)
-                        ? IconButton(
-                      icon: const Icon(Icons.delete, color: Color(0xFFD87F7F)),
-                      onPressed: () => _confirmDelete(comment),
-                    )
-                        : null,
+                    trailing: null, // 👈 uklonjena ikona za brisanje
                   ),
                 );
               },

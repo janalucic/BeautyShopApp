@@ -11,11 +11,12 @@ dependencies:
     sdk: flutter
 
   # Firebase
-  firebase_core: ^2.32.0
-  firebase_database: ^10.2.2
-  cloud_firestore: ^4.17.5
-  firebase_auth: ^4.16.0
-  firebase_storage: ^11.6.5
+  firebase_core: ^3.10.0
+  firebase_auth: ^5.7.0
+  firebase_database: ^11.0.0
+  cloud_firestore: ^5.4.0
+  firebase_storage: ^12.2.0
+
 
   # UI i slike
   flutter_svg: ^2.2.3

@@ -1,8 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'home_screen.dart';
+
 import '../providers/user_provider.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,21 +13,54 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool _obscurePassword = true; // za sakrivanje/prikaz lozinke
+  bool _obscurePassword = true;
+
+  // Login kontroleri
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  // Registracija kontroleri
+  final TextEditingController _regNameController = TextEditingController();
+  final TextEditingController _regEmailController = TextEditingController();
+  final TextEditingController _regPasswordController = TextEditingController();
+
+  // Validacija lozinke
+  bool _hasUppercase = false;
+  bool _hasNumber = false;
+  bool _hasSpecial = false;
+  bool _hasMinLength = false;
+
+  void _validatePassword(String password) {
+    setState(() {
+      _hasUppercase = password.contains(RegExp(r'[A-Z]'));
+      _hasNumber = password.contains(RegExp(r'\d'));
+      _hasSpecial =
+          password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+      _hasMinLength = password.length >= 8;
+    });
+  }
+
+  bool _isValidPassword() {
+    return _hasUppercase &&
+        _hasNumber &&
+        _hasSpecial &&
+        _hasMinLength;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = context.watch<UserProvider>();
+
     return Scaffold(
       body: Stack(
         children: [
-          // Pozadina sa gradientom
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFFFFC1CC), // svetlo roze
-                  Color(0xFFF5E6DA), // bež
-                  Color(0xFF800020), // bordo
+                  Color(0xFFFFC1CC),
+                  Color(0xFFF5E6DA),
+                  Color(0xFF800020),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -39,75 +73,49 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   children: [
                     const SizedBox(height: 50),
-                    // Logo u kružiću
                     CircleAvatar(
                       radius: 50,
                       backgroundColor:
-                      Colors.white.withAlpha((0.3 * 255).toInt()),
+                      Colors.white.withOpacity(0.3),
                       child: ClipOval(
                         child: Image.asset(
                           'assets/images/adora.jpg',
-                          fit: BoxFit.cover,
                           width: 80,
                           height: 80,
+                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
                     const SizedBox(height: 40),
-                    // Panel sa inputima i dugmadima
                     ClipRRect(
                       borderRadius: BorderRadius.circular(30),
                       child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                        filter:
+                        ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                         child: Container(
                           margin: const EdgeInsets.symmetric(horizontal: 24),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 36),
+                          padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
                             color: const Color(0xFF800020),
                             borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                Colors.black.withAlpha((0.3 * 255).toInt()),
-                                blurRadius: 12,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
                           ),
                           child: Column(
                             children: [
-                              // Email polje
                               TextField(
-                                style: const TextStyle(color: Colors.white),
-                                decoration: InputDecoration(
-                                  hintText: 'Email',
-                                  hintStyle:
-                                  const TextStyle(color: Colors.white70),
-                                  filled: true,
-                                  fillColor: Colors.pink[100]?.withAlpha(50),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                ),
+                                controller: _emailController,
+                                style:
+                                const TextStyle(color: Colors.white),
+                                decoration: _inputDecoration('Email'),
                               ),
                               const SizedBox(height: 16),
-                              // Password polje sa ikonicom oka
                               TextField(
+                                controller: _passwordController,
                                 obscureText: _obscurePassword,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: InputDecoration(
-                                  hintText: 'Lozinka',
-                                  hintStyle:
-                                  const TextStyle(color: Colors.white70),
-                                  filled: true,
-                                  fillColor: Colors.pink[100]?.withAlpha(50),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  suffixIcon: IconButton(
+                                style:
+                                const TextStyle(color: Colors.white),
+                                decoration: _inputDecoration(
+                                  'Lozinka',
+                                  suffix: IconButton(
                                     icon: Icon(
                                       _obscurePassword
                                           ? Icons.visibility_off
@@ -116,215 +124,206 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     onPressed: () {
                                       setState(() {
-                                        _obscurePassword = !_obscurePassword;
+                                        _obscurePassword =
+                                        !_obscurePassword;
                                       });
                                     },
                                   ),
                                 ),
                               ),
                               const SizedBox(height: 24),
-                              // Prijavi se dugme
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
-                                  onPressed: () {
-                                    // OVDE IDE PRAVA LOGIKA LOGIN-A kasnije
-                                    // Na primer: context.read<UserProvider>().login(...)
+                                  onPressed: () async {
+                                    final error =
+                                    await userProvider.loginUser(
+                                      email: _emailController.text.trim(),
+                                      password:
+                                      _passwordController.text.trim(),
+                                    );
+
+                                    if (error != null) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content: Text(error)),
+                                      );
+                                    } else {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                            const HomeScreen()),
+                                      );
+                                    }
                                   },
+                                  child: const Text('Prijavi se'),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF800020),
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 14),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                    ),
-                                  ),
+                                      backgroundColor: Colors.white),
+                                  onPressed: () {
+                                    _showRegisterDialog(context, userProvider);
+                                  },
                                   child: const Text(
-                                    'Prijavi se',
+                                    'Registruj se',
                                     style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                        color: Color(0xFF800020)),
                                   ),
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              // Registruj se dugme
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (_) => AlertDialog(
-                                        backgroundColor: const Color(0xFF800020),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                          BorderRadius.circular(25),
-                                        ),
-                                        title: const Text(
-                                          'Registracija',
-                                          style: TextStyle(color: Colors.white),
-                                        ),
-                                        content: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            TextField(
-                                              style: const TextStyle(
-                                                  color: Colors.white),
-                                              decoration:
-                                              const InputDecoration(
-                                                hintText: 'Ime i prezime',
-                                                hintStyle: TextStyle(
-                                                    color: Colors.white70),
-                                                filled: true,
-                                                fillColor:
-                                                Color.fromARGB(38, 255, 255, 255),
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                  BorderRadius.all(
-                                                      Radius.circular(15)),
-                                                  borderSide: BorderSide.none,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            TextField(
-                                              style: const TextStyle(
-                                                  color: Colors.white),
-                                              decoration:
-                                              const InputDecoration(
-                                                hintText: 'Email',
-                                                hintStyle: TextStyle(
-                                                    color: Colors.white70),
-                                                filled: true,
-                                                fillColor:
-                                                Color.fromARGB(38, 255, 255, 255),
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                  BorderRadius.all(
-                                                      Radius.circular(15)),
-                                                  borderSide: BorderSide.none,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            TextField(
-                                              obscureText: true,
-                                              style: const TextStyle(
-                                                  color: Colors.white),
-                                              decoration:
-                                              const InputDecoration(
-                                                hintText: 'Lozinka',
-                                                hintStyle: TextStyle(
-                                                    color: Colors.white70),
-                                                filled: true,
-                                                fillColor:
-                                                Color.fromARGB(38, 255, 255, 255),
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                  BorderRadius.all(
-                                                      Radius.circular(15)),
-                                                  borderSide: BorderSide.none,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: const Text(
-                                              'Otkaži',
-                                              style: TextStyle(color: Colors.white),
-                                            ),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                const SnackBar(
-                                                    content: Text(
-                                                        'Registrovan (UI test)!')),
-                                              );
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.white,
-                                              padding: const EdgeInsets.symmetric(
-                                                  vertical: 14, horizontal: 20),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                BorderRadius.circular(20),
-                                              ),
-                                            ),
-                                            child: const Text(
-                                              'Registruj se',
-                                              style: TextStyle(
-                                                  color: Color(0xFF800020),
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 14),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Registruj se',
-                                    style: TextStyle(
-                                      color: Color(0xFF800020),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                              TextButton(
+                                onPressed: () {
+                                  userProvider.loginAsGuest();
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                        const HomeScreen()),
+                                  );
+                                },
+                                child: const Text(
+                                  'Prijavi se kao gost',
+                                  style:
+                                  TextStyle(color: Colors.white),
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    // Dugme "Prijavi se kao gost"
-                    TextButton(
-                      onPressed: () {
-                        // 1️⃣ Postavi korisnika kao gosta
-                        context.read<UserProvider>().loginAsGuest();
-
-                        // 2️⃣ Idi na HomeScreen
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const HomeScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Prijavi se kao gost',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 50),
+                    )
                   ],
                 ),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ================= VALIDATION ROW =================
+  Widget _buildValidationRow(String text, bool isValid) {
+    return Row(
+      children: [
+        Icon(
+          isValid ? Icons.check_circle : Icons.cancel,
+          color: isValid ? Colors.green : Colors.red,
+          size: 18,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: TextStyle(
+            color: isValid ? Colors.green : Colors.red,
+            fontSize: 14,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ================= REGISTER DIALOG =================
+  void _showRegisterDialog(
+      BuildContext context, UserProvider userProvider) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFF800020),
+        title: const Text('Registracija',
+            style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _regNameController,
+              style: const TextStyle(color: Colors.white),
+              decoration: _inputDecoration('Ime i prezime'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _regEmailController,
+              style: const TextStyle(color: Colors.white),
+              decoration: _inputDecoration('Email'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _regPasswordController,
+              obscureText: true,
+              onChanged: _validatePassword,
+              style: const TextStyle(color: Colors.white),
+              decoration: _inputDecoration('Lozinka'),
+            ),
+            const SizedBox(height: 12),
+            _buildValidationRow(
+                'Bar jedno veliko slovo', _hasUppercase),
+            _buildValidationRow('Bar jedan broj', _hasNumber),
+            _buildValidationRow(
+                'Bar jedan specijalni karakter', _hasSpecial),
+            _buildValidationRow(
+                'Najmanje 8 karaktera', _hasMinLength),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Otkaži',
+                style: TextStyle(color: Colors.white)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (!_isValidPassword()) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content:
+                      Text('Lozinka ne ispunjava uslove')),
+                );
+                return;
+              }
+
+              final error = await userProvider.registerUser(
+                name: _regNameController.text.trim(),
+                email: _regEmailController.text.trim(),
+                password: _regPasswordController.text.trim(),
+              );
+
+              if (error != null) {
+                ScaffoldMessenger.of(context)
+                    .showSnackBar(SnackBar(content: Text(error)));
+              } else {
+                Navigator.pop(context);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const HomeScreen()),
+                );
+              }
+            },
+            child: const Text('Registruj se'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint,
+      {Widget? suffix}) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Colors.white70),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.15),
+      suffixIcon: suffix,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(20),
+        borderSide: BorderSide.none,
       ),
     );
   }

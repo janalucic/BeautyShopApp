@@ -7,6 +7,7 @@ import 'viewmodels/product.dart';
 import 'viewmodels/category.dart';
 import 'viewmodels/comment.dart'; // ✅ DODAT IMPORT
 import 'providers/user_provider.dart';
+import 'providers/cart_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +20,9 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ProductViewModel()),
         Provider(create: (_) => CategoryViewModel()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
-        ChangeNotifierProvider(create: (_) => CommentViewModel()), // ✅ sada radi
+        ChangeNotifierProvider(create: (_) => CommentViewModel()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+
       ],
       child: const MyApp(),
     ),
