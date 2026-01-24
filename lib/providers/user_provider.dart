@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 
+/// =======================
+/// USER MODEL
+/// =======================
 class UserModel {
   final String uid;
   final String name;
@@ -35,12 +38,15 @@ class UserModel {
       'name': name,
       'email': email,
       'role': role,
-      if (telefon != null) 'telefon': telefon,
-      if (adresa != null) 'adresa': adresa,
+      if (telefon != null && telefon!.isNotEmpty) 'telefon': telefon,
+      if (adresa != null && adresa!.isNotEmpty) 'adresa': adresa,
     };
   }
 }
 
+/// =======================
+/// USER PROVIDER
+/// =======================
 class UserProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final DatabaseReference _usersRef =
@@ -50,13 +56,17 @@ class UserProvider extends ChangeNotifier {
   bool _isGuest = true;
   bool _isLoading = false;
 
+  // =======================
   // GETTERS
+  // =======================
   UserModel? get currentUser => _currentUser;
   bool get isGuest => _isGuest;
   bool get isAdmin => _currentUser?.role == 'admin';
   bool get isLoading => _isLoading;
 
-  // INIT USER
+  // =======================
+  // INIT USER (on app start)
+  // =======================
   Future<void> initUser() async {
     final firebaseUser = _auth.currentUser;
 
@@ -76,14 +86,15 @@ class UserProvider extends ChangeNotifier {
       if (snapshot.exists && snapshot.value != null) {
         final data =
         Map<dynamic, dynamic>.from(snapshot.value as dynamic);
+
         _currentUser =
             UserModel.fromMap(firebaseUser.uid, data);
         _isGuest = false;
       } else {
-        _currentUser = null;
-        _isGuest = false;
         debugPrint(
             'Korisnik postoji u Auth, ali nema zapis u bazi');
+        _currentUser = null;
+        _isGuest = false;
       }
     } catch (e) {
       debugPrint('Greška initUser: $e');
@@ -94,7 +105,9 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // =======================
   // LOGIN
+  // =======================
   Future<String?> loginUser({
     required String email,
     required String password,
@@ -118,11 +131,12 @@ class UserProvider extends ChangeNotifier {
 
       final data =
       Map<dynamic, dynamic>.from(snapshot.value as dynamic);
+
       _currentUser = UserModel.fromMap(uid, data);
       _isGuest = false;
 
       return null;
-    } on FirebaseAuthException {
+    } on FirebaseAuthException catch (_) {
       return 'Neispravni kredencijali.';
     } catch (e) {
       debugPrint('Login error: $e');
@@ -133,11 +147,15 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
+  // =======================
   // REGISTRACIJA
+  // =======================
   Future<String?> registerUser({
     required String name,
     required String email,
     required String password,
+    String? telefon,
+    String? adresa,
   }) async {
     try {
       _isLoading = true;
@@ -156,6 +174,8 @@ class UserProvider extends ChangeNotifier {
         name: name,
         email: email,
         role: 'user',
+        telefon: telefon,
+        adresa: adresa,
       );
 
       await _usersRef.child(uid).set(user.toMap());
@@ -164,16 +184,21 @@ class UserProvider extends ChangeNotifier {
       _isGuest = false;
 
       return null;
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Auth error: ${e.code}');
+      return 'Registracija nije uspela.';
     } catch (e) {
       debugPrint('Register error: $e');
-      return 'Registracija nije uspela.';
+      return 'Greška pri registraciji.';
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
+  // =======================
   // UPDATE PROFILA
+  // =======================
   Future<void> updateCurrentUser({
     required String name,
     required String email,
@@ -203,14 +228,18 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // =======================
   // GUEST
+  // =======================
   void loginAsGuest() {
     _currentUser = null;
     _isGuest = true;
     notifyListeners();
   }
 
+  // =======================
   // LOGOUT
+  // =======================
   Future<void> logout() async {
     await _auth.signOut();
     _currentUser = null;

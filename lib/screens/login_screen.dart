@@ -14,38 +14,18 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
+  bool _obscureRegisterPassword = true;
 
-  // Login kontroleri
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  // LOGIN
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
-  // Registracija kontroleri
-  final TextEditingController _regNameController = TextEditingController();
-  final TextEditingController _regEmailController = TextEditingController();
-  final TextEditingController _regPasswordController = TextEditingController();
-
-  // Validacija lozinke
-  bool _hasUppercase = false;
-  bool _hasNumber = false;
-  bool _hasSpecial = false;
-  bool _hasMinLength = false;
-
-  void _validatePassword(String password) {
-    setState(() {
-      _hasUppercase = password.contains(RegExp(r'[A-Z]'));
-      _hasNumber = password.contains(RegExp(r'\d'));
-      _hasSpecial =
-          password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
-      _hasMinLength = password.length >= 8;
-    });
-  }
-
-  bool _isValidPassword() {
-    return _hasUppercase &&
-        _hasNumber &&
-        _hasSpecial &&
-        _hasMinLength;
-  }
+  // REGISTER
+  final _regNameController = TextEditingController();
+  final _regEmailController = TextEditingController();
+  final _regPasswordController = TextEditingController();
+  final _regAddressController = TextEditingController();
+  final _regPhoneController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -75,8 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 50),
                     CircleAvatar(
                       radius: 50,
-                      backgroundColor:
-                      Colors.white.withOpacity(0.3),
+                      backgroundColor: Colors.white.withOpacity(0.3),
                       child: ClipOval(
                         child: Image.asset(
                           'assets/images/adora.jpg',
@@ -87,11 +66,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 40),
+
+                    // GLASS CARD
                     ClipRRect(
                       borderRadius: BorderRadius.circular(30),
                       child: BackdropFilter(
-                        filter:
-                        ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
                         child: Container(
                           margin: const EdgeInsets.symmetric(horizontal: 24),
                           padding: const EdgeInsets.all(24),
@@ -103,16 +83,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             children: [
                               TextField(
                                 controller: _emailController,
-                                style:
-                                const TextStyle(color: Colors.white),
+                                style: const TextStyle(color: Colors.white),
                                 decoration: _inputDecoration('Email'),
                               ),
                               const SizedBox(height: 16),
                               TextField(
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
-                                style:
-                                const TextStyle(color: Colors.white),
+                                style: const TextStyle(color: Colors.white),
                                 decoration: _inputDecoration(
                                   'Lozinka',
                                   suffix: IconButton(
@@ -124,21 +102,34 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     onPressed: () {
                                       setState(() {
-                                        _obscurePassword =
-                                        !_obscurePassword;
+                                        _obscurePassword = !_obscurePassword;
                                       });
                                     },
                                   ),
                                 ),
                               ),
                               const SizedBox(height: 24),
+
+                              // PRIJAVA
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                    const Color(0xFF5A0015),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                      BorderRadius.circular(20),
+                                    ),
+                                  ),
                                   onPressed: () async {
                                     final error =
                                     await userProvider.loginUser(
-                                      email: _emailController.text.trim(),
+                                      email:
+                                      _emailController.text.trim(),
                                       password:
                                       _passwordController.text.trim(),
                                     );
@@ -146,8 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     if (error != null) {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
-                                        SnackBar(
-                                            content: Text(error)),
+                                        SnackBar(content: Text(error)),
                                       );
                                     } else {
                                       Navigator.pushReplacement(
@@ -158,40 +148,39 @@ class _LoginScreenState extends State<LoginScreen> {
                                       );
                                     }
                                   },
-                                  child: const Text('Prijavi se'),
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white),
-                                  onPressed: () {
-                                    _showRegisterDialog(context, userProvider);
-                                  },
                                   child: const Text(
-                                    'Registruj se',
+                                    'Prijavi se',
                                     style: TextStyle(
-                                        color: Color(0xFF800020)),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              TextButton(
-                                onPressed: () {
-                                  userProvider.loginAsGuest();
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                        const HomeScreen()),
-                                  );
-                                },
-                                child: const Text(
-                                  'Prijavi se kao gost',
-                                  style:
-                                  TextStyle(color: Colors.white),
+
+                              // REGISTRACIJA
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                    const Color(0xFFD87F7F),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                      BorderRadius.circular(20),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    _showRegisterDialog(
+                                        context, userProvider);
+                                  },
+                                  child: const Text(
+                                    'Registruj se',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
                                 ),
                               ),
                             ],
@@ -209,27 +198,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // ================= VALIDATION ROW =================
-  Widget _buildValidationRow(String text, bool isValid) {
-    return Row(
-      children: [
-        Icon(
-          isValid ? Icons.check_circle : Icons.cancel,
-          color: isValid ? Colors.green : Colors.red,
-          size: 18,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: TextStyle(
-            color: isValid ? Colors.green : Colors.red,
-            fontSize: 14,
-          ),
-        ),
-      ],
-    );
-  }
-
   // ================= REGISTER DIALOG =================
   void _showRegisterDialog(
       BuildContext context, UserProvider userProvider) {
@@ -237,39 +205,41 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF800020),
-        title: const Text('Registracija',
-            style: TextStyle(color: Colors.white)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _regNameController,
-              style: const TextStyle(color: Colors.white),
-              decoration: _inputDecoration('Ime i prezime'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _regEmailController,
-              style: const TextStyle(color: Colors.white),
-              decoration: _inputDecoration('Email'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _regPasswordController,
-              obscureText: true,
-              onChanged: _validatePassword,
-              style: const TextStyle(color: Colors.white),
-              decoration: _inputDecoration('Lozinka'),
-            ),
-            const SizedBox(height: 12),
-            _buildValidationRow(
-                'Bar jedno veliko slovo', _hasUppercase),
-            _buildValidationRow('Bar jedan broj', _hasNumber),
-            _buildValidationRow(
-                'Bar jedan specijalni karakter', _hasSpecial),
-            _buildValidationRow(
-                'Najmanje 8 karaktera', _hasMinLength),
-          ],
+        title: const Text(
+          'Registracija',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            children: [
+              _regField('Ime i prezime', _regNameController),
+              _regField('Email', _regEmailController),
+              _regField('Adresa', _regAddressController),
+              _regField('Telefon', _regPhoneController),
+              TextField(
+                controller: _regPasswordController,
+                obscureText: _obscureRegisterPassword,
+                style: const TextStyle(color: Colors.white),
+                decoration: _inputDecoration(
+                  'Lozinka',
+                  suffix: IconButton(
+                    icon: Icon(
+                      _obscureRegisterPassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.white70,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscureRegisterPassword =
+                        !_obscureRegisterPassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -278,20 +248,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(color: Colors.white)),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD87F7F),
+              foregroundColor: Colors.white,
+            ),
             onPressed: () async {
-              if (!_isValidPassword()) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content:
-                      Text('Lozinka ne ispunjava uslove')),
-                );
-                return;
-              }
-
               final error = await userProvider.registerUser(
                 name: _regNameController.text.trim(),
                 email: _regEmailController.text.trim(),
                 password: _regPasswordController.text.trim(),
+                telefon: _regPhoneController.text.trim(),
+                adresa: _regAddressController.text.trim(),
               );
 
               if (error != null) {
@@ -313,8 +280,18 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String hint,
-      {Widget? suffix}) {
+  Widget _regField(String hint, TextEditingController c) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: TextField(
+        controller: c,
+        style: const TextStyle(color: Colors.white),
+        decoration: _inputDecoration(hint),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint, {Widget? suffix}) {
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: Colors.white70),
