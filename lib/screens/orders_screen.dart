@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:provider/provider.dart';
+import '../providers/currency_provider.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -12,7 +14,6 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> {
   bool _isLoading = true;
-
   List<Map<String, dynamic>> _orders = [];
   Map<int, String> _productNames = {}; // productId -> naziv
 
@@ -20,6 +21,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
   void initState() {
     super.initState();
     _loadData();
+
+    // Fetch EUR rate
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<CurrencyProvider>(context, listen: false).fetchEurRate();
+    });
   }
 
   Future<void> _loadData() async {
@@ -108,9 +114,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currencyProvider = context.watch<CurrencyProvider>();
+
     return Scaffold(
       body: Stack(
         children: [
+          // Background
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -181,10 +190,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             crossAxisAlignment:
                             CrossAxisAlignment.start,
                             children: [
-                              // ⛔ NEMA OVERFLOW
                               Wrap(
-                                alignment:
-                                WrapAlignment.spaceBetween,
+                                alignment: WrapAlignment.spaceBetween,
                                 runSpacing: 8,
                                 children: [
                                   Text(
@@ -194,12 +201,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                       color: Color(0xFFD87F7F),
                                     ),
                                   ),
-                                  statusBadge(
-                                      order['status'] ??
-                                          'nepoznato'),
+                                  statusBadge(order['status'] ?? 'nepoznato'),
                                 ],
                               ),
-
                               const SizedBox(height: 10),
 
                               ...items.map((item) {
@@ -207,59 +211,59 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 final productName =
                                     _productNames[productId] ??
                                         'Nepoznat proizvod';
-
                                 return Text(
-                                  '• Proizvod: $productName (x${item['quantity']})',
+                                  '• $productName (x${item['quantity']})',
                                 );
                               }),
 
                               const Divider(height: 20),
 
-                              Builder(
-                                builder: (_) {
-                                  final totalPrice =
-                                      order['totalPrice'] ?? 0;
-                                  final pdv = (totalPrice * 0.05)
-                                      .round(); // 20% PDV
-                                  final postarina = 350; // poštarina
-                                  final finalPrice =
-                                      totalPrice + pdv + postarina;
+                              Builder(builder: (_) {
+                                final totalPrice =
+                                    order['totalPrice'] ?? 0;
+                                final pdv = (totalPrice * 0.05).round();
+                                final postarina = 350;
+                                final finalPrice =
+                                    totalPrice + pdv + postarina;
 
-                                  return Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Ukupno: $totalPrice RSD',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                // Konverzija u EUR
+                                final double? finalPriceEur =
+                                currencyProvider.convertToEur(finalPrice);
+
+                                return Column(
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Ukupno: $totalPrice RSD',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      Text(
-                                        'PDV (5%): $pdv RSD',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                    ),
+                                    Text(
+                                      'PDV (5%): $pdv RSD',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      Text(
-                                        'Poštarina: $postarina RSD',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                    ),
+                                    Text(
+                                      'Poštarina: $postarina RSD',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      const SizedBox(height: 5),
-                                      Text(
-                                        'Za naplatu: $finalPrice RSD',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color:
-                                          Color(0xFFD87F7F),
-                                        ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    Text(
+                                      'Za naplatu: $finalPrice RSD'
+                                          '${(finalPriceEur != null && !currencyProvider.isLoading) ? ' ≈ ${finalPriceEur.toStringAsFixed(2)} EUR' : ''}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFD87F7F),
                                       ),
-                                    ],
-                                  );
-                                },
-                              ),
+                                    ),
+                                  ],
+                                );
+                              }),
                             ],
                           ),
                         ),

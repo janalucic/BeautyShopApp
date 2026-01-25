@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen>
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
 
-    // Fetch proizvoda i kategorija u post-frame callback
+    // Fetch proizvoda i kategorija
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ProductViewModel>(context, listen: false).fetchProducts();
       Provider.of<CategoryViewModel>(context, listen: false).fetchCategories();
@@ -160,7 +160,8 @@ class _HomeScreenState extends State<HomeScreen>
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => ProductDetailScreen(product: product, isAdmin: true),
+              builder: (_) =>
+                  ProductDetailScreen(product: product, isAdmin: true),
             ),
           );
         }
@@ -220,20 +221,20 @@ class _HomeScreenState extends State<HomeScreen>
     final List<Product> popularProducts =
     products.where((p) => p.popular).toList();
 
-    final searchResults = _searchQuery.isEmpty
+    final List<Product> searchResults = _searchQuery.isEmpty
         ? []
         : products
-        .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .where((p) =>
+        p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
 
-    // Lista ekrana za bottom nav sa pravim ekranima
     final List<Widget> _screens = [
       SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 40),
-            /// LOGO
+            // LOGO
             Image.asset(
               'assets/images/adora.jpg',
               width: double.infinity,
@@ -241,7 +242,7 @@ class _HomeScreenState extends State<HomeScreen>
               fit: BoxFit.cover,
             ),
             const SizedBox(height: 15),
-            /// PRETRAGA
+            // PRETRAGA
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
@@ -261,7 +262,9 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
             const SizedBox(height: 20),
+            // PROIZVODI
             if (_searchQuery.isEmpty) ...[
+              // KATEGORIJE
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: ValueListenableBuilder<List<Category>>(
@@ -280,15 +283,14 @@ class _HomeScreenState extends State<HomeScreen>
                       height: 50,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
-                        children: categories
-                            .map((c) => _categoryButton(c))
-                            .toList(),
+                        children: categories.map((c) => _categoryButton(c)).toList(),
                       ),
                     );
                   },
                 ),
               ),
               const SizedBox(height: 20),
+              // BANNER
               SizedBox(
                 height: 200,
                 child: PageView(
@@ -337,6 +339,27 @@ class _HomeScreenState extends State<HomeScreen>
                   itemBuilder: (_, index) =>
                       _recommendedProductCard(popularProducts[index]),
                 ),
+              ),
+            ] else ...[
+              // PRIKAZ REZULTATA PRETRAGE
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Rezultati pretrage:',
+                  style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFD87F7F)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: searchResults.length,
+                itemBuilder: (_, index) =>
+                    _recommendedProductCard(searchResults[index]),
               ),
             ],
           ],

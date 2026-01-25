@@ -34,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // Pozadina
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -81,12 +82,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: Column(
                             children: [
+                              // EMAIL LOGIN
                               TextField(
                                 controller: _emailController,
                                 style: const TextStyle(color: Colors.white),
                                 decoration: _inputDecoration('Email'),
                               ),
                               const SizedBox(height: 16),
+                              // LOZINKA LOGIN
                               TextField(
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
@@ -115,36 +118,34 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                    const Color(0xFF5A0015),
+                                    backgroundColor: const Color(0xFF5A0015),
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 14),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                      BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(20),
                                     ),
                                   ),
                                   onPressed: () async {
-                                    final error =
-                                    await userProvider.loginUser(
-                                      email:
-                                      _emailController.text.trim(),
-                                      password:
-                                      _passwordController.text.trim(),
+                                    final error = await userProvider.loginUser(
+                                      email: _emailController.text.trim(),
+                                      password: _passwordController.text.trim(),
                                     );
 
                                     if (error != null) {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
-                                        SnackBar(content: Text(error)),
+                                        SnackBar(
+                                          content: Text(error),
+                                          backgroundColor: Colors.pink,
+                                        ),
                                       );
                                     } else {
                                       Navigator.pushReplacement(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (_) =>
-                                            const HomeScreen()),
+                                          builder: (_) => const HomeScreen(),
+                                        ),
                                       );
                                     }
                                   },
@@ -158,24 +159,50 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(height: 12),
 
+                              // PRIJAVA KAO GOST
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton(
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: Colors.white70),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    userProvider.loginAsGuest();
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const HomeScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text(
+                                    'Prijavi se kao gost',
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+
                               // REGISTRACIJA
                               SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor:
-                                    const Color(0xFFD87F7F),
+                                    backgroundColor: const Color(0xFFD87F7F),
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 14),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                      BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(20),
                                     ),
                                   ),
                                   onPressed: () {
-                                    _showRegisterDialog(
-                                        context, userProvider);
+                                    _showRegisterDialog(context, userProvider);
                                   },
                                   child: const Text(
                                     'Registruj se',
@@ -199,8 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ================= REGISTER DIALOG =================
-  void _showRegisterDialog(
-      BuildContext context, UserProvider userProvider) {
+  void _showRegisterDialog(BuildContext context, UserProvider userProvider) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -231,8 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     onPressed: () {
                       setState(() {
-                        _obscureRegisterPassword =
-                        !_obscureRegisterPassword;
+                        _obscureRegisterPassword = !_obscureRegisterPassword;
                       });
                     },
                   ),
@@ -253,7 +278,15 @@ class _LoginScreenState extends State<LoginScreen> {
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
-              final error = await userProvider.registerUser(
+              String? error = _validateRegisterFields();
+              if (error != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(error), backgroundColor: Colors.pink),
+                );
+                return;
+              }
+
+              error = await userProvider.registerUser(
                 name: _regNameController.text.trim(),
                 email: _regEmailController.text.trim(),
                 password: _regPasswordController.text.trim(),
@@ -262,14 +295,14 @@ class _LoginScreenState extends State<LoginScreen> {
               );
 
               if (error != null) {
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(SnackBar(content: Text(error)));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(error), backgroundColor: Colors.pink),
+                );
               } else {
                 Navigator.pop(context);
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const HomeScreen()),
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
                 );
               }
             },
@@ -278,6 +311,31 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
       ),
     );
+  }
+
+  String? _validateRegisterFields() {
+    String name = _regNameController.text.trim();
+    String email = _regEmailController.text.trim();
+    String password = _regPasswordController.text.trim();
+    String address = _regAddressController.text.trim();
+    String phone = _regPhoneController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty || address.isEmpty || phone.isEmpty) {
+      return 'Sva polja su obavezna!';
+    }
+
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) return 'Unesite validan email!';
+
+    final passwordRegex = RegExp(r'^(?=.*[A-Z])(?=.*[.!@#$%^&*(),?":{}|<>]).{8,}$');
+    if (!passwordRegex.hasMatch(password)) {
+      return 'Lozinka mora imati najmanje 8 karaktera,\njedno veliko slovo i jedan specijalni karakter!';
+    }
+
+    final phoneRegex = RegExp(r'^\d{6,}$');
+    if (!phoneRegex.hasMatch(phone)) return 'Telefon mora sadržati najmanje 6 cifara!';
+
+    return null;
   }
 
   Widget _regField(String hint, TextEditingController c) {

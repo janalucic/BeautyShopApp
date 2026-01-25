@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+
 import '../providers/cart_provider.dart';
+import 'home_screen.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -30,56 +32,46 @@ class CartScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               // OVERLAY
-              Container(
-                color: Colors.black.withOpacity(0.25),
-              ),
+              Container(color: Colors.black.withOpacity(0.25)),
+
               SafeArea(
                 child: Column(
                   children: [
                     const SizedBox(height: 16),
-                    // BACK + NASLOV
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back,
-                                color: Colors.white, size: 28),
-                            onPressed: () => Navigator.pop(context),
+
+                    // NASLOV
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16),
+                      child: Center(
+                        child: Text(
+                          'Vaša korpa',
+                          style: TextStyle(
+                            fontFamily: 'Spinnaker',
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 0.8,
                           ),
-                          const Expanded(
-                            child: Center(
-                              child: Text(
-                                'Vaša korpa',
-                                style: TextStyle(
-                                  fontFamily: 'Spinnaker',
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  letterSpacing: 0.8,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 48),
-                        ],
+                        ),
                       ),
                     ),
+
                     const SizedBox(height: 30),
 
-                    // GLAVNI GLASS CARD
+                    // SADRŽAJ
                     Expanded(
                       child: cartItems.isEmpty
                           ? Center(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(30),
                           child: BackdropFilter(
-                            filter:
-                            ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                            filter: ImageFilter.blur(
+                                sigmaX: 2, sigmaY: 2),
                             child: Container(
-                              margin:
-                              const EdgeInsets.symmetric(horizontal: 20),
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 20),
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 24, vertical: 40),
                               decoration: BoxDecoration(
@@ -87,7 +79,8 @@ class CartScreen extends StatelessWidget {
                                     255, 255, 255, 0.1),
                                 borderRadius: BorderRadius.circular(30),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.1),
+                                  color:
+                                  Colors.white.withOpacity(0.1),
                                 ),
                               ),
                               child: Column(
@@ -120,24 +113,40 @@ class CartScreen extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(height: 40),
+
+                                  // 🔥 IZMENJENO DUGME
                                   ElevatedButton(
-                                    onPressed: () =>
-                                        Navigator.pop(context),
-                                    style: ElevatedButton.styleFrom(
+                                    onPressed: () {
+                                      Navigator.of(context)
+                                          .pushAndRemoveUntil(
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                          const HomeScreen(),
+                                        ),
+                                            (route) => false,
+                                      );
+                                    },
+                                    style:
+                                    ElevatedButton.styleFrom(
                                       backgroundColor:
                                       const Color(0xFFFF5DA2),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 40, vertical: 14),
-                                      shape: RoundedRectangleBorder(
+                                      padding:
+                                      const EdgeInsets.symmetric(
+                                          horizontal: 40,
+                                          vertical: 14),
+                                      shape:
+                                      RoundedRectangleBorder(
                                         borderRadius:
-                                        BorderRadius.circular(25),
+                                        BorderRadius.circular(
+                                            25),
                                       ),
                                     ),
                                     child: const Text(
                                       'Nazad na kupovinu',
                                       style: TextStyle(
                                         fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight:
+                                        FontWeight.bold,
                                         color: Colors.white,
                                       ),
                                     ),
@@ -155,11 +164,9 @@ class CartScreen extends StatelessWidget {
                           final item = cartItems[index];
                           return Card(
                             color: Colors.white.withOpacity(0.15),
-                            margin:
-                            const EdgeInsets.symmetric(vertical: 8),
+                            margin: const EdgeInsets.symmetric(
+                                vertical: 8),
                             child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
                               leading: Image.network(
                                 item.product.imageUrl,
                                 width: 50,
@@ -168,85 +175,21 @@ class CartScreen extends StatelessWidget {
                               ),
                               title: Text(
                                 item.product.name,
-                                style: const TextStyle(color: Colors.white),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Colors.white),
                               ),
                               subtitle: Text(
                                 '${item.product.price.toStringAsFixed(2)} RSD',
-                                style:
-                                const TextStyle(color: Colors.white70),
+                                style: const TextStyle(
+                                    color: Colors.white70),
                               ),
-                              trailing: SizedBox(
-                                width: 170,
-                                child: Row(
-                                  mainAxisAlignment:
-                                  MainAxisAlignment.end,
-                                  children: [
-                                    // Smanji količinu
-                                    IconButton(
-                                      onPressed: () => cartProvider
-                                          .decreaseQuantity(item.product),
-                                      icon: const Icon(
-                                          Icons.remove_circle_outline,
-                                          color: Colors.white),
-                                    ),
-                                    // Prikaz količine
-                                    Text(
-                                      '${item.quantity}',
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    // Povećaj količinu
-                                    IconButton(
-                                      onPressed: () => cartProvider
-                                          .increaseQuantity(item.product),
-                                      icon: const Icon(
-                                          Icons.add_circle_outline,
-                                          color: Colors.white),
-                                    ),
-                                    // Dugme za brisanje sa dijalogom
-                                    IconButton(
-                                      onPressed: () {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            title:
-                                            const Text('Obriši proizvod?'),
-                                            content: const Text(
-                                                'Da li ste sigurni da želite da obrišete ovaj proizvod iz korpe?'),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(context),
-                                                child: const Text('Otkaži'),
-                                              ),
-                                              ElevatedButton(
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor:
-                                                  const Color(0xFFFF5DA2),
-                                                ),
-                                                onPressed: () {
-                                                  cartProvider.removeFromCart(
-                                                      item.product.id);
-                                                  Navigator.pop(context);
-                                                },
-                                                child: const Text(
-                                                    'Obriši',
-                                                    style: TextStyle(
-                                                        color:
-                                                        Colors.white)),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                      icon: const Icon(Icons.delete,
-                                          color: Color(0xFFFF5DA2)),
-                                    ),
-                                  ],
-                                ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete,
+                                    color: Color(0xFFFF5DA2)),
+                                onPressed: () {
+                                  cartProvider.removeFromCart(
+                                      item.product.id);
+                                },
                               ),
                             ),
                           );
@@ -254,7 +197,7 @@ class CartScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // TOTAL I ZAVRŠI KUPOVINU DUGME
+                    // ZAVRŠI KUPOVINU
                     if (cartItems.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(
@@ -262,7 +205,8 @@ class CartScreen extends StatelessWidget {
                         child: Column(
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text(
                                   'Ukupno:',
@@ -283,58 +227,56 @@ class CartScreen extends StatelessWidget {
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: () async {
-                                // Kreiranje porudžbine
                                 final order = {
-                                  'id': DateTime.now().millisecondsSinceEpoch,
-                                  'items': cartItems.map((item) => {
-                                    'productId': item.product.id,
-                                    'price': item.product.price,
+                                  'id': DateTime.now()
+                                      .millisecondsSinceEpoch,
+                                  'items': cartItems
+                                      .map((item) => {
+                                    'productId':
+                                    item.product.id,
+                                    'price':
+                                    item.product.price,
                                     'quantity': item.quantity,
-                                  }).toList(),
+                                  })
+                                      .toList(),
                                   'status': 'obrađuje se',
                                   'totalPrice': totalPrice,
-                                  'userId': FirebaseAuth.instance.currentUser?.uid,
+                                  'userId': FirebaseAuth
+                                      .instance.currentUser?.uid,
                                 };
 
-                                try {
-                                  // Sačuvaj order u bazi
-                                  await FirebaseDatabase.instance
-                                      .ref('Orders')
-                                      .push()
-                                      .set(order);
+                                await FirebaseDatabase.instance
+                                    .ref('Orders')
+                                    .push()
+                                    .set(order);
 
-                                  // Očisti korpu
-                                  await cartProvider.clearCart();
+                                await cartProvider.clearCart();
 
-                                  // Prikaz poruke korisniku
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Vaša porudžbina je evidentirana!'),
-                                      backgroundColor: Colors.pink,
-                                    ),
-                                  );
-                                } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                          'Došlo je do greške prilikom evidentiranja porudžbine.'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                }
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        'Vaša porudžbina je evidentirana!'),
+                                    backgroundColor: Colors.pink,
+                                  ),
+                                );
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFF5DA2),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 40, vertical: 14),
+                                backgroundColor:
+                                const Color(0xFFFF5DA2),
+                                padding:
+                                const EdgeInsets.symmetric(
+                                    horizontal: 40,
+                                    vertical: 14),
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(25)),
+                                    borderRadius:
+                                    BorderRadius.circular(25)),
                               ),
                               child: const Text(
                                 'Završi kupovinu',
                                 style: TextStyle(
-                                    fontSize: 16, color: Colors.white),
+                                    fontSize: 16,
+                                    color: Colors.white),
                               ),
                             ),
                           ],

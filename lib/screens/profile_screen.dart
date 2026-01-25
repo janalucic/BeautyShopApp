@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/user_provider.dart'; // ispravan path
+import '../providers/user_provider.dart';
+import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -75,16 +76,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
             )
                 : Column(
               children: [
-                const SizedBox(height: 20),
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                    onPressed: () => Navigator.pop(context),
+                // Gornja traka sa logout ikonom + tekst
+                Padding(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          userProvider.logout();
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                          );
+                        },
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.logout, color: Colors.white, size: 28),
+                            SizedBox(height: 4),
+                            Text(
+                              'Odjavi se',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const Spacer(),
@@ -167,11 +192,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showEditDialog(BuildContext context) {
-    _nameController.text = _nameController.text;
-    _emailController.text = _emailController.text;
-    _addressController.text = _addressController.text;
-    _phoneController.text = _phoneController.text;
-
     showDialog(
       context: context,
       builder: (context) {

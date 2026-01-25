@@ -17,7 +17,6 @@ dependencies:
   cloud_firestore: ^5.4.0
   firebase_storage: ^12.2.0
 
-
   # UI i slike
   flutter_svg: ^2.2.3
   carousel_slider: ^5.1.1
@@ -31,6 +30,7 @@ dependencies:
   intl: ^0.19.0
   url_launcher: ^6.3.2
   smooth_page_indicator: ^1.0.0+2  # za dots indicator
+  http: ^1.1.0                      # ✅ za CurrencyProvider
 
 dev_dependencies:
   flutter_test:
@@ -57,7 +57,6 @@ flutter:
     - assets/images/maskara.jpg
     - assets/images/korpa5.png
     - assets/images/splash111.jpg
-
 
   fonts:
     - family: DancingScript

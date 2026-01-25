@@ -1,12 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:first_app_flutter/providers/cart_provider.dart';
+import '../providers/user_provider.dart';
+import '../providers/currency_provider.dart';
 import 'comments_screen.dart';
 import 'login_screen.dart';
-import 'cart_screen.dart';
 import 'package:first_app_flutter/models/product.dart';
-import '../providers/user_provider.dart';
-import '../providers/cart_provider.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -27,9 +27,20 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   bool _isDescriptionExpanded = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Fetch currency rate on init
+    Provider.of<CurrencyProvider>(context, listen: false).fetchEurRate();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final bool isGuest = context.watch<UserProvider>().isGuest;
     final cartProvider = context.watch<CartProvider>();
+    final currencyProvider = context.watch<CurrencyProvider>();
+
+    final double totalPriceRsd = widget.product.price * _quantity;
+    final double? totalPriceEur = currencyProvider.convertToEur(totalPriceRsd);
 
     return Scaffold(
       body: Container(
@@ -43,14 +54,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         child: SafeArea(
           child: Stack(
             children: [
-              // Scroll sadržaj
+              // Scroll content
               Padding(
                 padding: const EdgeInsets.only(bottom: 180),
                 child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Fiksirani naziv + back dugme
+                      // Back button + name
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
                         child: Row(
@@ -78,7 +89,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       const SizedBox(height: 10),
 
-                      // Slika proizvoda
+                      // Product image
                       Center(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(25),
@@ -96,7 +107,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Opis sa vidi više / vidi manje
+                      // Description
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Column(
@@ -150,7 +161,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
               ),
 
-              // Donji fiksni panel
+              // Bottom fixed panel
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Container(
@@ -169,7 +180,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Kontrola količine
+                      // Quantity
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -201,19 +212,32 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Cena
-                      Text(
-                        'Cena: ${(widget.product.price * _quantity).toStringAsFixed(2)} RSD',
-                        style: const TextStyle(
-                          fontFamily: 'Spinnaker',
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFD87F7F),
-                        ),
+                      // Price
+                      Column(
+                        children: [
+                          Text(
+                            'Cena: ${totalPriceRsd.toStringAsFixed(2)} RSD',
+                            style: const TextStyle(
+                              fontFamily: 'Spinnaker',
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFD87F7F),
+                            ),
+                          ),
+                          if (!currencyProvider.isLoading && totalPriceEur != null)
+                            Text(
+                              '≈ ${totalPriceEur.toStringAsFixed(2)} EUR',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 12),
 
-                      // Dugmad Vidi komentare i Dodaj u korpu
+                      // Comments + Add to Cart buttons
                       Row(
                         children: [
                           Expanded(
@@ -315,9 +339,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     ),
                                   );
                                 } else {
-                                  // Dodaj proizvod u CartProvider
                                   await cartProvider.addToCart(widget.product, _quantity);
-
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(content: Text('Proizvod dodat u korpu!')),
                                   );
