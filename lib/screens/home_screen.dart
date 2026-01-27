@@ -70,13 +70,14 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _categoryButton(model.Category category) {
     return ElevatedButton(
       onPressed: () {
-        setState(() => _selectedCategoryId = category.id);
+        final isAdmin = context.read<UserProvider>().isAdmin; // ispravka
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => CategoryProductsScreen(
               categoryId: category.id,
               categoryName: category.name,
+              isAdmin: isAdmin, // prosleđujemo admin status
             ),
           ),
         );
@@ -225,11 +226,11 @@ class _HomeScreenState extends State<HomeScreen>
           children: [
             const SizedBox(height: 40),
             SizedBox(
-              width: MediaQuery.of(context).size.width, // puni ekran
+              width: MediaQuery.of(context).size.width,
               child: Image.asset(
                 'assets/images/adora.jpg',
                 height: 120,
-                fit: BoxFit.cover, // popuni prostor i očuvaj proporcije
+                fit: BoxFit.cover,
               ),
             ),
 
@@ -256,7 +257,6 @@ class _HomeScreenState extends State<HomeScreen>
 
             if (_searchQuery.isEmpty) ...[
               // KATEGORIJE
-              // KATEGORIJE
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: ValueListenableBuilder<List<model.Category>>(
@@ -271,103 +271,6 @@ class _HomeScreenState extends State<HomeScreen>
                       );
                     }
 
-                    // Dijalog za izmenu kategorije
-                    void _showEditCategoryDialog(model.Category category) {
-                      final TextEditingController controller =
-                      TextEditingController(text: category.name);
-
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            backgroundColor: const Color(0xFFD87F7F),
-                            title: const Text(
-                              "Izmeni kategoriju",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            content: TextField(
-                              controller: controller,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: const InputDecoration(
-                                hintText: "Novo ime kategorije",
-                                hintStyle: TextStyle(color: Colors.white70),
-                                enabledBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(color: Colors.white),
-                                ),
-                                focusedBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(color: Colors.white),
-                                ),
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text("Otkaži",
-                                    style: TextStyle(color: Colors.white)),
-                              ),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  await categoryVM.updateCategoryName(
-                                      category.id, controller.text);
-                                  await categoryVM.fetchCategories(); // osveži listu
-                                  Navigator.pop(context);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                ),
-                                child: const Text(
-                                  "Sačuvaj",
-                                  style: TextStyle(color: Color(0xFFD87F7F)),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    }
-
-                    // Dijalog za brisanje kategorije
-                    void _showDeleteCategoryDialog(model.Category category) {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            backgroundColor: const Color(0xFFD87F7F),
-                            title: const Text(
-                              "Brisanje kategorije",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            content: const Text(
-                              "Da li ste sigurni da želite da obrišete kategoriju?",
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text("Otkaži",
-                                    style: TextStyle(color: Colors.white)),
-                              ),
-                              ElevatedButton(
-                                onPressed: () async {
-                                  await categoryVM.deleteCategory(category.id);
-                                  await categoryVM.fetchCategories(); // osveži listu
-                                  Navigator.pop(context);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                ),
-                                child: const Text(
-                                  "Obriši",
-                                  style: TextStyle(color: Color(0xFFD87F7F)),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    }
-
-                    // Jedan item kategorije sa admin dugmadima
                     Widget categoryItem(model.Category category) {
                       return Padding(
                         padding: const EdgeInsets.only(right: 12),
@@ -381,7 +284,9 @@ class _HomeScreenState extends State<HomeScreen>
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   ElevatedButton(
-                                    onPressed: () => _showEditCategoryDialog(category),
+                                    onPressed: () {
+                                      _showEditCategoryDialog(category, categoryVM);
+                                    },
                                     style: ElevatedButton.styleFrom(
                                       shape: const CircleBorder(),
                                       padding: const EdgeInsets.all(8),
@@ -392,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   ),
                                   const SizedBox(width: 4),
                                   ElevatedButton(
-                                    onPressed: () => _showDeleteCategoryDialog(category),
+                                    onPressed: () {},
                                     style: ElevatedButton.styleFrom(
                                       shape: const CircleBorder(),
                                       padding: const EdgeInsets.all(8),
@@ -403,13 +308,12 @@ class _HomeScreenState extends State<HomeScreen>
                                   ),
                                 ],
                               ),
-                            ]
+                            ],
                           ],
                         ),
                       );
                     }
 
-                    // Glavna lista kategorija
                     return SizedBox(
                       height: 110,
                       child: ListView(
@@ -420,56 +324,7 @@ class _HomeScreenState extends State<HomeScreen>
                             Padding(
                               padding: const EdgeInsets.only(left: 8),
                               child: ElevatedButton.icon(
-                                onPressed: () {
-                                  // dijalog za dodavanje nove kategorije
-                                  final TextEditingController controller =
-                                  TextEditingController();
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        backgroundColor: const Color(0xFFD87F7F),
-                                        title: const Text("Nova kategorija",
-                                            style: TextStyle(color: Colors.white)),
-                                        content: TextField(
-                                          controller: controller,
-                                          style: const TextStyle(color: Colors.white),
-                                          decoration: const InputDecoration(
-                                            hintText: "Ime kategorije",
-                                            hintStyle: TextStyle(color: Colors.white70),
-                                            enabledBorder: UnderlineInputBorder(
-                                              borderSide: BorderSide(color: Colors.white),
-                                            ),
-                                            focusedBorder: UnderlineInputBorder(
-                                              borderSide: BorderSide(color: Colors.white),
-                                            ),
-                                          ),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context),
-                                            child: const Text("Otkaži",
-                                                style: TextStyle(color: Colors.white)),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () async {
-                                              await categoryVM.addCategory(controller.text);
-                                              await categoryVM.fetchCategories(); // osveži listu
-                                              Navigator.pop(context);
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.white,
-                                            ),
-                                            child: const Text(
-                                              "Sačuvaj",
-                                              style: TextStyle(color: Color(0xFFD87F7F)),
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                },
+                                onPressed: () {},
                                 icon: const Icon(Icons.add, color: Colors.white),
                                 label: const Text("Dodaj",
                                     style: TextStyle(color: Colors.white)),
@@ -486,9 +341,6 @@ class _HomeScreenState extends State<HomeScreen>
                   },
                 ),
               ),
-
-
-
 
               // BANNERI
               SizedBox(
@@ -526,8 +378,7 @@ class _HomeScreenState extends State<HomeScreen>
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: popular.length,
-                  itemBuilder: (_, i) =>
-                      _recommendedProductCard(popular[i]),
+                  itemBuilder: (_, i) => _recommendedProductCard(popular[i]),
                 ),
               ),
             ] else ...[
@@ -559,14 +410,12 @@ class _HomeScreenState extends State<HomeScreen>
         unselectedItemColor: const Color(0xFFBFA1A1),
         type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
               icon: Icon(Icons.list_alt), label: 'Porudžbine'),
           BottomNavigationBarItem(
               icon: Icon(Icons.shopping_cart), label: 'Korpa'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person), label: 'Profil'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
         ],
       ),
     );
