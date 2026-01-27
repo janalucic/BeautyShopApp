@@ -8,7 +8,7 @@ import 'viewmodels/category.dart';
 import 'viewmodels/comment.dart';
 import 'providers/user_provider.dart';
 import 'providers/cart_provider.dart';
-import 'providers/currency_provider.dart'; // ✅ DODAT
+import 'providers/currency_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,10 +19,12 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ProductViewModel()),
         Provider(create: (_) => CategoryViewModel()),
-        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(
+          create: (_) => UserProvider()..initUser(), // ✅ KLJUČNA IZMJENA
+        ),
         ChangeNotifierProvider(create: (_) => CommentViewModel()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
-        ChangeNotifierProvider(create: (_) => CurrencyProvider()), // ✅ DODAT
+        ChangeNotifierProvider(create: (_) => CurrencyProvider()),
       ],
       child: const MyApp(),
     ),
