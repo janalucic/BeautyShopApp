@@ -1,5 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
+import '../models/user.dart'; // ispravno: user.dart
 
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
@@ -9,21 +12,27 @@ class UsersScreen extends StatefulWidget {
 }
 
 class _UsersScreenState extends State<UsersScreen> {
-  final List<Map<String, String>> users = [];
+  String _searchQuery = '';
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    final userProvider = context.read<UserProvider>();
+    userProvider.fetchAllUsers();
+  }
+
   // Dijalog za dodavanje/izmenu korisnika
-  void _showAddUserDialog({int? index}) {
-    if (index != null) {
-      final user = users[index];
-      _nameController.text = user['name']!;
-      _emailController.text = user['email']!;
-      _addressController.text = user['address']!;
-      _phoneController.text = user['phone']!;
+  void _showAddUserDialog({UserModel? user}) {
+    if (user != null) {
+      _nameController.text = user.name;
+      _emailController.text = user.email;
+      _addressController.text = user.adresa ?? '';
+      _phoneController.text = user.telefon ?? '';
     } else {
       _nameController.clear();
       _emailController.clear();
@@ -44,7 +53,7 @@ class _UsersScreenState extends State<UsersScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    index == null ? 'Dodaj korisnika' : 'Uredi korisnika',
+                    user == null ? 'Dodaj korisnika' : 'Uredi korisnika',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 22,
@@ -73,34 +82,36 @@ class _UsersScreenState extends State<UsersScreen> {
                           backgroundColor: Colors.white,
                           foregroundColor: const Color(0xFF800020),
                         ),
-                        onPressed: () {
+                        onPressed: () async {
+                          final userProvider = context.read<UserProvider>();
                           if (_nameController.text.isNotEmpty &&
-                              _emailController.text.isNotEmpty &&
-                              _addressController.text.isNotEmpty &&
-                              _phoneController.text.isNotEmpty) {
-                            setState(() {
-                              final newUser = {
-                                'name': _nameController.text,
-                                'email': _emailController.text,
-                                'address': _addressController.text,
-                                'phone': _phoneController.text,
-                              };
-                              if (index == null) {
-                                users.add(newUser);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Korisnik uspešno dodat')),
-                                );
-                              } else {
-                                users[index] = newUser;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Korisnik uspešno izmenjen')),
-                                );
-                              }
-                            });
+                              _emailController.text.isNotEmpty) {
+                            if (user == null) {
+                              // Dodavanje novog korisnika
+                              await userProvider.registerUser(
+                                name: _nameController.text,
+                                email: _emailController.text,
+                                password: 'default123',
+                                adresa: _addressController.text,
+                                telefon: _phoneController.text,
+                              );
+                            } else {
+                              // Izmena postojećeg korisnika
+                              await userProvider.updateUser(
+                                UserModel(
+                                  uid: user.uid,
+                                  name: _nameController.text,
+                                  email: _emailController.text,
+                                  role: user.role,
+                                  adresa: _addressController.text,
+                                  telefon: _phoneController.text,
+                                ),
+                              );
+                            }
                             Navigator.pop(context);
                           }
                         },
-                        child: Text(index == null ? 'Dodaj' : 'Sačuvaj'),
+                        child: Text(user == null ? 'Dodaj' : 'Sačuvaj'),
                       ),
                     ],
                   )
@@ -133,7 +144,14 @@ class _UsersScreenState extends State<UsersScreen> {
   }
 
   // Confirm dijalog za brisanje korisnika
-  void _confirmDelete(int index) {
+  void _confirmDelete(UserModel user) {
+    if (user.role == 'admin') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ne možete obrisati drugog administratora')),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -175,14 +193,10 @@ class _UsersScreenState extends State<UsersScreen> {
                       backgroundColor: Colors.white,
                       foregroundColor: const Color(0xFF800020),
                     ),
-                    onPressed: () {
-                      setState(() {
-                        users.removeAt(index);
-                      });
+                    onPressed: () async {
+                      final userProvider = context.read<UserProvider>();
+                      await userProvider.deleteUser(user.uid);
                       Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Korisnik uspešno obrisan')),
-                      );
                     },
                     child: const Text('Obriši'),
                   ),
@@ -197,142 +211,84 @@ class _UsersScreenState extends State<UsersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = context.watch<UserProvider>();
+    final allUsers = userProvider.users;
+
+    final filteredUsers = _searchQuery.isEmpty
+        ? allUsers
+        : allUsers
+        .where((u) => u.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+
     return Scaffold(
-      body: Stack(
-        children: [
-          // Pozadinska slika
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/cherry2.png'),
-                fit: BoxFit.cover,
+      backgroundColor: const Color(0xFFF5E8E8),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                onChanged: (v) => setState(() => _searchQuery = v),
+                decoration: InputDecoration(
+                  hintText: 'Pretraži korisnike po imenu...',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide.none),
+                ),
               ),
             ),
-          ),
-          // Tamniji overlay
-          Container(color: const Color(0x80000000)),
-          SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    'Korisnici',
-                    style: TextStyle(
-                      fontFamily: 'Spinnaker',
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withOpacity(0.6),
-                          offset: const Offset(2, 2),
-                          blurRadius: 4,
-                        ),
-                      ],
+            const SizedBox(height: 10),
+            Expanded(
+              child: ListView.builder(
+                itemCount: filteredUsers.length,
+                itemBuilder: (context, index) {
+                  final user = filteredUsers[index];
+                  return Card(
+                    color: Colors.white.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Expanded(
-                  child: Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(25),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: const Color.fromRGBO(255, 255, 255, 0.2),
-                            borderRadius: BorderRadius.circular(25),
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: ListTile(
+                      title: Text(user.name, style: const TextStyle(color: Colors.white)),
+                      subtitle: Text(
+                        '${user.email}\n${user.adresa ?? ''}\n${user.telefon ?? ''}',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.white),
+                            onPressed: () => _showAddUserDialog(user: user),
                           ),
-                          child: users.isEmpty
-                              ? const Center(
-                            child: Text(
-                              'Trenutno nema korisnika.',
-                              style: TextStyle(
-                                fontFamily: 'Spinnaker',
-                                fontSize: 20,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              textAlign: TextAlign.center,
+                          if (user.role != 'admin')
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Color(0xFF800020)),
+                              onPressed: () => _confirmDelete(user),
                             ),
-                          )
-                              : ListView.separated(
-                            itemCount: users.length,
-                            separatorBuilder: (context, index) =>
-                            const SizedBox(height: 10),
-                            itemBuilder: (context, index) {
-                              final user = users[index];
-                              return Card(
-                                color: Colors.white.withOpacity(0.1),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                child: ListTile(
-                                  title: Text(
-                                    user['name']!,
-                                    style: const TextStyle(color: Colors.white),
-                                  ),
-                                  subtitle: Text(
-                                    '${user['email']}\n${user['address']}\n${user['phone']}',
-                                    style: const TextStyle(color: Colors.white70),
-                                  ),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.edit,
-                                            color: Colors.white),
-                                        onPressed: () =>
-                                            _showAddUserDialog(index: index),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete,
-                                            color: Color(0xFF800020)), // burgundy
-                                        onPressed: () =>
-                                            _confirmDelete(index),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
+                        ],
                       ),
                     ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 30,
-                  right: 30,
-                  child: FloatingActionButton(
-                    backgroundColor: const Color(0xFF800020), // burgundy
-                    foregroundColor: Colors.white,
-                    onPressed: () => _showAddUserDialog(),
-                    child: const Icon(Icons.add, size: 30),
-                  ),
-                ),
-              ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: FloatingActionButton(
+                backgroundColor: const Color(0xFF800020),
+                foregroundColor: Colors.white,
+                onPressed: () => _showAddUserDialog(),
+                child: const Icon(Icons.add, size: 30),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

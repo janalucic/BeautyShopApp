@@ -227,16 +227,19 @@ class CategoryProductsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     // Pick image
-                    ElevatedButton(
+                    OutlinedButton.icon(
                       onPressed: () async {
                         final ImagePicker picker = ImagePicker();
                         final XFile? image = await picker.pickImage(source: ImageSource.gallery);
                         if (image != null) setState(() => pickedImage = image);
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
-                      child: Text(
-                        pickedImage == null ? 'Izaberi sliku' : 'Izabrano',
-                        style: const TextStyle(color: Color(0xFFD87F7F)),
+                      icon: const Icon(Icons.image, color: Colors.white),
+                      label: const Text(
+                        'Izaberi fotografiju',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.white),
                       ),
                     ),
                   ],

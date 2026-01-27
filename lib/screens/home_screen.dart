@@ -8,6 +8,7 @@ import 'product_detail_screen.dart';
 import 'profile_screen.dart';
 import 'orders_screen.dart';
 import 'cart_screen.dart';
+import 'users_screen.dart'; // admin screen
 
 import 'package:first_app_flutter/viewmodels/product.dart';
 import 'package:first_app_flutter/viewmodels/category.dart';
@@ -70,14 +71,14 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _categoryButton(model.Category category) {
     return ElevatedButton(
       onPressed: () {
-        final isAdmin = context.read<UserProvider>().isAdmin; // ispravka
+        final isAdmin = context.read<UserProvider>().isAdmin;
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => CategoryProductsScreen(
               categoryId: category.id,
               categoryName: category.name,
-              isAdmin: isAdmin, // prosleđujemo admin status
+              isAdmin: isAdmin,
             ),
           ),
         );
@@ -220,182 +221,34 @@ class _HomeScreenState extends State<HomeScreen>
         p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
         .toList();
 
-    final screens = [
-      SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 40),
-            SizedBox(
-              width: MediaQuery.of(context).size.width,
-              child: Image.asset(
-                'assets/images/adora.jpg',
-                height: 120,
-                fit: BoxFit.cover,
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // SEARCH
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                onChanged: (v) => setState(() => _searchQuery = v),
-                decoration: InputDecoration(
-                  hintText: 'Pretraži proizvode...',
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            if (_searchQuery.isEmpty) ...[
-              // KATEGORIJE
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ValueListenableBuilder<List<model.Category>>(
-                  valueListenable: categoryVM.categories,
-                  builder: (context, categories, _) {
-                    if (categories.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          'Nema kategorija.',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      );
-                    }
-
-                    Widget categoryItem(model.Category category) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _categoryButton(category),
-                            if (isAdmin) ...[
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      _showEditCategoryDialog(category, categoryVM);
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      shape: const CircleBorder(),
-                                      padding: const EdgeInsets.all(8),
-                                      backgroundColor: const Color(0xFFD87F7F),
-                                    ),
-                                    child: const Icon(Icons.edit,
-                                        size: 16, color: Colors.white),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  ElevatedButton(
-                                    onPressed: () {},
-                                    style: ElevatedButton.styleFrom(
-                                      shape: const CircleBorder(),
-                                      padding: const EdgeInsets.all(8),
-                                      backgroundColor: const Color(0xFFD87F7F),
-                                    ),
-                                    child: const Icon(Icons.delete,
-                                        size: 16, color: Colors.white),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ],
-                        ),
-                      );
-                    }
-
-                    return SizedBox(
-                      height: 110,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: [
-                          ...categories.map(categoryItem).toList(),
-                          if (isAdmin)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8),
-                              child: ElevatedButton.icon(
-                                onPressed: () {},
-                                icon: const Icon(Icons.add, color: Colors.white),
-                                label: const Text("Dodaj",
-                                    style: TextStyle(color: Colors.white)),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFF2A7A7),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20)),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              // BANNERI
-              SizedBox(
-                height: 200,
-                child: PageView(
-                  controller: _pageController,
-                  children: banners
-                      .map((b) => Image.asset(b, fit: BoxFit.cover))
-                      .toList(),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-              SmoothPageIndicator(
-                controller: _pageController,
-                count: banners.length,
-                effect: const ExpandingDotsEffect(
-                  activeDotColor: Color(0xFFD87F7F),
-                  dotColor: Color(0xFFBFA1A1),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              const Text('Izdvajamo za vas',
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFD87F7F))),
-
-              const SizedBox(height: 10),
-
-              SizedBox(
-                height: 210,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: popular.length,
-                  itemBuilder: (_, i) => _recommendedProductCard(popular[i]),
-                ),
-              ),
-            ] else ...[
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: searchResults.length,
-                itemBuilder: (_, i) =>
-                    _recommendedProductCard(searchResults[i]),
-              ),
-            ],
-          ],
-        ),
-      ),
+    // === SCREEN LIST ZA NAVBAR ===
+    final List<Widget> screens = isAdmin
+        ? [
+      _buildHomeScreen(productVM, categoryVM),
+      const OrdersScreen(),
+      const UsersScreen(),
+      const ProfileScreen(),
+    ]
+        : [
+      _buildHomeScreen(productVM, categoryVM),
       const OrdersScreen(),
       const CartScreen(),
       const ProfileScreen(),
+    ];
+
+    // === NAVBAR ITEMS ===
+    final List<BottomNavigationBarItem> navItems = isAdmin
+        ? const [
+      BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+      BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Porudžbine'),
+      BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Korisnici'),
+      BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+    ]
+        : const [
+      BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+      BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Porudžbine'),
+      BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Korpa'),
+      BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
     ];
 
     return Scaffold(
@@ -409,13 +262,181 @@ class _HomeScreenState extends State<HomeScreen>
         selectedItemColor: const Color(0xFFD87F7F),
         unselectedItemColor: const Color(0xFFBFA1A1),
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.list_alt), label: 'Porudžbine'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart), label: 'Korpa'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+        items: navItems,
+      ),
+    );
+  }
+
+  // ====================== BUILD HOME SCREEN METHOD ======================
+  Widget _buildHomeScreen(ProductViewModel productVM, CategoryViewModel categoryVM) {
+    final products = productVM.products;
+    final popular = products.where((p) => p.popular).toList();
+    final searchResults = _searchQuery.isEmpty
+        ? <Product>[]
+        : products
+        .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+
+    final isAdmin = context.read<UserProvider>().isAdmin;
+
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          SizedBox(
+            width: MediaQuery.of(context).size.width,
+            child: Image.asset(
+              'assets/images/adora.jpg',
+              height: 120,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // SEARCH
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              onChanged: (v) => setState(() => _searchQuery = v),
+              decoration: InputDecoration(
+                hintText: 'Pretraži proizvode...',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          if (_searchQuery.isEmpty) ...[
+            // KATEGORIJE
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ValueListenableBuilder<List<model.Category>>(
+                valueListenable: categoryVM.categories,
+                builder: (context, categories, _) {
+                  if (categories.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'Nema kategorija.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    );
+                  }
+
+                  Widget categoryItem(model.Category category) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _categoryButton(category),
+                          if (isAdmin) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    _showEditCategoryDialog(category, categoryVM);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    shape: const CircleBorder(),
+                                    padding: const EdgeInsets.all(8),
+                                    backgroundColor: const Color(0xFFD87F7F),
+                                  ),
+                                  child: const Icon(Icons.edit,
+                                      size: 16, color: Colors.white),
+                                ),
+                                const SizedBox(width: 4),
+                                ElevatedButton(
+                                  onPressed: () {},
+                                  style: ElevatedButton.styleFrom(
+                                    shape: const CircleBorder(),
+                                    padding: const EdgeInsets.all(8),
+                                    backgroundColor: const Color(0xFFD87F7F),
+                                  ),
+                                  child: const Icon(Icons.delete,
+                                      size: 16, color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  }
+
+                  return SizedBox(
+                    height: 110,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        ...categories.map(categoryItem).toList(),
+                        if (isAdmin)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: ElevatedButton.icon(
+                              onPressed: () {},
+                              icon: const Icon(Icons.add, color: Colors.white),
+                              label: const Text("Dodaj",
+                                  style: TextStyle(color: Colors.white)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFF2A7A7),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20)),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            // BANNERI
+            SizedBox(
+              height: 200,
+              child: PageView(
+                controller: _pageController,
+                children: banners.map((b) => Image.asset(b, fit: BoxFit.cover)).toList(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SmoothPageIndicator(
+              controller: _pageController,
+              count: banners.length,
+              effect: const ExpandingDotsEffect(
+                activeDotColor: Color(0xFFD87F7F),
+                dotColor: Color(0xFFBFA1A1),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text('Izdvajamo za vas',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFD87F7F))),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 210,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: popular.length,
+                itemBuilder: (_, i) => _recommendedProductCard(popular[i]),
+              ),
+            ),
+          ] else ...[
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: searchResults.length,
+              itemBuilder: (_, i) => _recommendedProductCard(searchResults[i]),
+            ),
+          ],
         ],
       ),
     );
