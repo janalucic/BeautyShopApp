@@ -5,6 +5,7 @@ class UserModel {
   final String role;
   final String? telefon;
   final String? adresa;
+  final String? grad;
 
   UserModel({
     required this.uid,
@@ -13,6 +14,7 @@ class UserModel {
     required this.role,
     this.telefon,
     this.adresa,
+    this.grad,
   });
 
   factory UserModel.fromMap(String uid, Map<dynamic, dynamic> map) {
@@ -23,6 +25,7 @@ class UserModel {
       role: map['role'] ?? 'user',
       telefon: map['telefon'],
       adresa: map['adresa'],
+      grad: map['grad'],
     );
   }
 
@@ -33,6 +36,7 @@ class UserModel {
       'role': role,
       if (telefon != null) 'telefon': telefon,
       if (adresa != null) 'adresa': adresa,
+      if (grad != null) 'grad': grad,
     };
   }
 }

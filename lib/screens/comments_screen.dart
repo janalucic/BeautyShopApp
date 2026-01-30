@@ -9,12 +9,10 @@ import 'login_screen.dart';
 
 class CommentsScreen extends StatefulWidget {
   final int productId;
-  final bool isAdmin;
 
   const CommentsScreen({
     super.key,
     required this.productId,
-    this.isAdmin = false,
   });
 
   @override
@@ -24,6 +22,7 @@ class CommentsScreen extends StatefulWidget {
 class _CommentsScreenState extends State<CommentsScreen> {
   final TextEditingController _commentController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  int _selectedRating = 5; // default ocena
 
   @override
   void initState() {
@@ -94,15 +93,41 @@ class _CommentsScreenState extends State<CommentsScreen> {
       return;
     }
 
+    if (userProvider.isAdmin) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: const Color(0xFFFFC1CC),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+          title: const Text(
+            'Administratori ne mogu dodavati komentare',
+            style: TextStyle(
+              color: Color(0xFF800020),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK', style: TextStyle(color: Color(0xFF800020))),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     final String uid = FirebaseAuth.instance.currentUser!.uid;
 
-    // NOVO: dodajemo userName iz UserProvider
     final newComment = Comment(
       id: DateTime.now().millisecondsSinceEpoch,
       productId: widget.productId,
       userId: uid,
-      userName: userProvider.currentUser!.name, // 👈 dodato
+      userName: userProvider.currentUser!.name,
       text: text,
+      rating: _selectedRating,
     );
 
     final commentVM = context.read<CommentViewModel>();
@@ -121,6 +146,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
   @override
   Widget build(BuildContext context) {
     final commentVM = context.watch<CommentViewModel>();
+    final userProvider = context.watch<UserProvider>();
 
     final comments = commentVM.comments
         .where((c) => c.productId == widget.productId)
@@ -152,15 +178,28 @@ class _CommentsScreenState extends State<CommentsScreen> {
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: ListTile(
-                    title: Text(comment.text),
-                    subtitle: Text(
-                      comment.userName, // 👈 koristimo userName direktno
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[700],
-                      ),
+                    title: Text(comment.text ?? ''),
+                    subtitle: Row(
+                      children: [
+                        Text(
+                          comment.userName ?? '',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[700]),
+                        ),
+                        const SizedBox(width: 10),
+                        // ====================
+                        // ZVEZDICE
+                        // ====================
+                        Row(
+                          children: _buildRatingStars(
+                            comment.rating?.toDouble() ?? 0,
+                            14.0,
+                            Colors.pinkAccent,
+                          ),
+                        ),
+                      ],
                     ),
-                    trailing: null, // 👈 uklonjena ikona za brisanje
                   ),
                 );
               },
@@ -168,32 +207,55 @@ class _CommentsScreenState extends State<CommentsScreen> {
           ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _commentController,
-                    decoration: InputDecoration(
-                      hintText: 'Dodaj komentar...',
-                      filled: true,
-                      fillColor: const Color(0xFFE3CFCF),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none,
+                // RATING SELECTOR
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    int starIndex = index + 1;
+                    return IconButton(
+                      icon: Icon(
+                        _selectedRating >= starIndex
+                            ? Icons.star
+                            : Icons.star_border,
+                        color: Colors.pinkAccent, // ROZE
+                      ),
+                      onPressed: () =>
+                          setState(() => _selectedRating = starIndex),
+                      iconSize: 28,
+                    );
+                  }),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _commentController,
+                        decoration: InputDecoration(
+                          hintText: 'Dodaj komentar...',
+                          filled: true,
+                          fillColor: const Color(0xFFE3CFCF),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () => _addComment(_commentController.text),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD87F7F),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () => _addComment(_commentController.text),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD87F7F),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: const Icon(Icons.send, color: Colors.white),
                     ),
-                  ),
-                  child: const Icon(Icons.send, color: Colors.white),
+                  ],
                 ),
               ],
             ),
@@ -201,5 +263,23 @@ class _CommentsScreenState extends State<CommentsScreen> {
         ],
       ),
     );
+  }
+
+  // ====================== POMOĆNA FUNKCIJA ZA ZVEZDICE ======================
+  List<Widget> _buildRatingStars(double rating, double size, Color color) {
+    List<Widget> stars = [];
+    int fullStars = rating.floor();
+    bool hasHalfStar = (rating - fullStars) >= 0.5;
+
+    for (int i = 0; i < fullStars; i++) {
+      stars.add(Icon(Icons.star, color: color, size: size));
+    }
+    if (hasHalfStar) {
+      stars.add(Icon(Icons.star_half, color: color, size: size));
+    }
+    while (stars.length < 5) {
+      stars.add(Icon(Icons.star_border, color: color, size: size));
+    }
+    return stars;
   }
 }

@@ -1,37 +1,39 @@
 class Comment {
   final int id;
   final int productId;
-  final String userId;     // UID iz Firebase Auth
-  final String userName;   // NOVO polje: ime korisnika
   final String text;
+  final String userId;
+  final int? rating; // NOVO: ocena između 1-5
+  final String? userName;
 
   Comment({
     required this.id,
     required this.productId,
-    required this.userId,
-    required this.userName, // obavezno
     required this.text,
+    required this.userId,
+    this.rating,
+    this.userName,
   });
 
-  // Factory za kreiranje Comment objekta iz JSON / Firebase snapshot
   factory Comment.fromJson(Map<String, dynamic> json) {
     return Comment(
-      id: int.parse(json['id'].toString()),
-      productId: int.parse(json['productId'].toString()),
-      userId: json['userId'].toString(),
-      userName: json['userName']?.toString() ?? 'Korisnik', // fallback za stare komentare
-      text: json['text'].toString(),
+      id: json['id'],
+      productId: json['productId'],
+      text: json['text'],
+      userId: json['userId'],
+      rating: json['rating'], // NOVO
+      userName: json['userName'],
     );
   }
 
-  // Pretvaranje Comment objekta u JSON za upis u Firebase
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'productId': productId,
-      'userId': userId,
-      'userName': userName, // NOVO polje
       'text': text,
+      'userId': userId,
+      if (rating != null) 'rating': rating, // NOVO
+      if (userName != null) 'userName': userName,
     };
   }
 }

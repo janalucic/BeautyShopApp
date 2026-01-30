@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:first_app_flutter/models/product.dart';
 import 'package:first_app_flutter/viewmodels/product.dart';
+import 'package:first_app_flutter/viewmodels/comment.dart';
 import 'product_detail_screen.dart';
 
 class CategoryProductsScreen extends StatelessWidget {
@@ -24,6 +25,7 @@ class CategoryProductsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final productVM = Provider.of<ProductViewModel>(context);
+    final commentVM = Provider.of<CommentViewModel>(context);
     final List<Product> products = productVM.products
         .where((p) => p.categoryId == categoryId)
         .toList();
@@ -67,6 +69,10 @@ class CategoryProductsScreen extends StatelessWidget {
         itemCount: products.length,
         itemBuilder: (context, index) {
           final product = products[index];
+          final averageRating =
+          commentVM.getAverageRating(product.id);
+          final commentCount =
+          commentVM.getCommentCount(product.id);
 
           return GestureDetector(
             onTap: () {
@@ -114,7 +120,8 @@ class CategoryProductsScreen extends StatelessWidget {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                        padding:
+                        const EdgeInsets.fromLTRB(12, 10, 12, 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -137,9 +144,25 @@ class CategoryProductsScreen extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
+                            const SizedBox(height: 6),
+                            // Prosečna ocena sa polu-zvezdicama i broj komentara
+                            Row(
+                              children: [
+                                ..._buildRatingStars(
+                                    averageRating, 14.0, Colors.pinkAccent),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '($commentCount)',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -181,7 +204,6 @@ class CategoryProductsScreen extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Name
                     TextField(
                       controller: nameController,
                       style: const TextStyle(color: Colors.white),
@@ -191,7 +213,6 @@ class CategoryProductsScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Description
                     TextField(
                       controller: descController,
                       maxLines: 3,
@@ -202,7 +223,6 @@ class CategoryProductsScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Price
                     TextField(
                       controller: priceController,
                       keyboardType: TextInputType.number,
@@ -213,24 +233,25 @@ class CategoryProductsScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Popular
                     Row(
                       children: [
                         Checkbox(
                           value: isPopular,
-                          onChanged: (val) => setState(() => isPopular = val ?? false),
+                          onChanged: (val) =>
+                              setState(() => isPopular = val ?? false),
                           checkColor: Colors.white,
                           activeColor: Colors.white70,
                         ),
-                        const Text('Popularan', style: TextStyle(color: Colors.white)),
+                        const Text('Popularan',
+                            style: TextStyle(color: Colors.white)),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    // Pick image
                     OutlinedButton.icon(
                       onPressed: () async {
                         final ImagePicker picker = ImagePicker();
-                        final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                        final XFile? image =
+                        await picker.pickImage(source: ImageSource.gallery);
                         if (image != null) setState(() => pickedImage = image);
                       },
                       icon: const Icon(Icons.image, color: Colors.white),
@@ -262,10 +283,8 @@ class CategoryProductsScreen extends StatelessWidget {
                       return;
                     }
 
-                    // Upload slike na Cloudinary
                     final imageUrl = await uploadImageToCloudinary(pickedImage!);
 
-                    // Kreiranje proizvoda
                     final newProduct = Product(
                       id: DateTime.now().millisecondsSinceEpoch,
                       categoryId: categoryId,
@@ -276,7 +295,6 @@ class CategoryProductsScreen extends StatelessWidget {
                       imageUrl: imageUrl,
                     );
 
-                    // Dodaj proizvod u ViewModel
                     await productVM.addProduct(newProduct);
 
                     Navigator.pop(context);
@@ -307,5 +325,23 @@ class CategoryProductsScreen extends StatelessWidget {
     final jsonRes = json.decode(resStr);
 
     return jsonRes['secure_url'];
+  }
+
+  // ====================== POMOĆNA FUNKCIJA ZA ZVEZDICE ======================
+  List<Widget> _buildRatingStars(double rating, double size, Color color) {
+    List<Widget> stars = [];
+    int fullStars = rating.floor();
+    bool hasHalfStar = (rating - fullStars) >= 0.5;
+
+    for (int i = 0; i < fullStars; i++) {
+      stars.add(Icon(Icons.star, color: color, size: size));
+    }
+    if (hasHalfStar) {
+      stars.add(Icon(Icons.star_half, color: color, size: size));
+    }
+    while (stars.length < 5) {
+      stars.add(Icon(Icons.star_border, color: color, size: size));
+    }
+    return stars;
   }
 }

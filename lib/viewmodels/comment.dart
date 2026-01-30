@@ -43,8 +43,8 @@ class CommentViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _commentService.addComment(comment);
-      _comments.add(comment); // lokalno dodavanje bez refetcha
+      await _commentService.addComment(comment); // comment sada ima rating
+      _comments.add(comment); // lokalno dodavanje
     } catch (e) {
       _errorMessage = 'Greška pri dodavanju komentara';
     } finally {
@@ -52,6 +52,7 @@ class CommentViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
 
   // ===============================
   // DELETE COMMENT
@@ -80,4 +81,22 @@ class CommentViewModel extends ChangeNotifier {
     _comments = [];
     notifyListeners();
   }
+  // ===============================
+// GET AVERAGE RATING FOR A PRODUCT
+// ===============================
+  double getAverageRating(int productId) {
+    final productComments = _comments.where((c) => c.productId == productId).toList();
+    if (productComments.isEmpty) return 0.0;
+
+    final total = productComments.fold<int>(0, (sum, c) => sum + (c.rating ?? 0));
+    return total / productComments.length;
+  }
+
+// ===============================
+// GET NUMBER OF COMMENTS FOR PRODUCT
+// ===============================
+  int getCommentCount(int productId) {
+    return _comments.where((c) => c.productId == productId).length;
+  }
+
 }

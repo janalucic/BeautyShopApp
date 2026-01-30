@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import '../models/user.dart'; // ispravno: user.dart
+import '../models/user.dart';
 
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
@@ -18,6 +18,7 @@ class _UsersScreenState extends State<UsersScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
 
   @override
   void initState() {
@@ -33,11 +34,13 @@ class _UsersScreenState extends State<UsersScreen> {
       _emailController.text = user.email;
       _addressController.text = user.adresa ?? '';
       _phoneController.text = user.telefon ?? '';
+      _cityController.text = user.grad ?? '';
     } else {
       _nameController.clear();
       _emailController.clear();
       _addressController.clear();
       _phoneController.clear();
+      _cityController.clear();
     }
 
     showDialog(
@@ -67,6 +70,8 @@ class _UsersScreenState extends State<UsersScreen> {
                   const SizedBox(height: 10),
                   _buildTextField(_addressController, 'Adresa', Icons.home),
                   const SizedBox(height: 10),
+                  _buildTextField(_cityController, 'Grad', Icons.location_city),
+                  const SizedBox(height: 10),
                   _buildTextField(_phoneController, 'Telefon', Icons.phone),
                   const SizedBox(height: 20),
                   Row(
@@ -94,6 +99,7 @@ class _UsersScreenState extends State<UsersScreen> {
                                 password: 'default123',
                                 adresa: _addressController.text,
                                 telefon: _phoneController.text,
+                                grad: _cityController.text,
                               );
                             } else {
                               // Izmena postojećeg korisnika
@@ -105,6 +111,7 @@ class _UsersScreenState extends State<UsersScreen> {
                                   role: user.role,
                                   adresa: _addressController.text,
                                   telefon: _phoneController.text,
+                                  grad: _cityController.text,
                                 ),
                               );
                             }
@@ -247,16 +254,34 @@ class _UsersScreenState extends State<UsersScreen> {
                 itemCount: filteredUsers.length,
                 itemBuilder: (context, index) {
                   final user = filteredUsers[index];
+                  final isAdmin = user.role == 'admin';
                   return Card(
-                    color: Colors.white.withOpacity(0.1),
+                    color: isAdmin
+                        ? const Color(0xFF800020).withOpacity(0.2) // bordo za admin
+                        : Colors.white.withOpacity(0.1),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
+                      side: isAdmin
+                          ? BorderSide(color: const Color(0xFF800020), width: 2)
+                          : BorderSide.none,
                     ),
                     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     child: ListTile(
-                      title: Text(user.name, style: const TextStyle(color: Colors.white)),
+                      title: Row(
+                        children: [
+                          Text(user.name,
+                              style: TextStyle(
+                                  color: isAdmin ? const Color(0xFF800020) : Colors.white,
+                                  fontWeight: isAdmin ? FontWeight.bold : FontWeight.normal)),
+                          if (isAdmin)
+                            const Padding(
+                              padding: EdgeInsets.only(left: 8.0),
+                              child: Icon(Icons.shield, color: Color(0xFF800020), size: 18),
+                            ),
+                        ],
+                      ),
                       subtitle: Text(
-                        '${user.email}\n${user.adresa ?? ''}\n${user.telefon ?? ''}',
+                        '${user.email}\n${user.adresa ?? ''}\n${user.grad ?? ''}\n${user.telefon ?? ''}',
                         style: const TextStyle(color: Colors.white70),
                       ),
                       trailing: Row(
@@ -266,7 +291,7 @@ class _UsersScreenState extends State<UsersScreen> {
                             icon: const Icon(Icons.edit, color: Colors.white),
                             onPressed: () => _showAddUserDialog(user: user),
                           ),
-                          if (user.role != 'admin')
+                          if (!isAdmin)
                             IconButton(
                               icon: const Icon(Icons.delete, color: Color(0xFF800020)),
                               onPressed: () => _confirmDelete(user),

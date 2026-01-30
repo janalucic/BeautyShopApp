@@ -249,14 +249,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => CommentsScreen(
-                                      productId: _product.id,
-                                      isAdmin: widget.isAdmin,
+                                      productId: _product.id, // samo ovo prosleđujemo
                                     ),
                                   ),
                                 );
                               },
                             ),
                           ),
+
                           const SizedBox(width: 10),
 
                           // ADMIN BUTTONS OR ADD TO CART
