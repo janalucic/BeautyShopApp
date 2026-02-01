@@ -36,20 +36,36 @@ class BannerViewModel extends ChangeNotifier {
   // ================= ADD BANNER =================
   Future<void> addBanner(BannerModel banner) async {
     await _bannerService.saveBanner(banner);
-    await fetchBanners();
+
+    // Dodaj samo ako ne postoji
+    if (!_banners.any((b) => b.id == banner.id)) {
+      _banners.add(banner);
+      notifyListeners();
+    }
   }
 
-  // ================= UPDATE BANNER =================
+// ================= UPDATE BANNER =================
   Future<void> updateBanner(BannerModel banner) async {
     await _bannerService.saveBanner(banner);
-    await fetchBanners();
+
+    // Nađi index po id i zameni
+    final index = _banners.indexWhere((b) => b.id == banner.id);
+    if (index != -1) {
+      _banners[index] = banner;
+    } else {
+      // Ako baner ne postoji, dodaj ga
+      _banners.add(banner);
+    }
+    notifyListeners();
   }
 
-  // ================= DELETE BANNER =================
+// ================= DELETE BANNER =================
   Future<void> deleteBanner(String id) async {
     await _bannerService.deleteBanner(id);
-    await fetchBanners();
+    _banners.removeWhere((b) => b.id == id);
+    notifyListeners();
   }
+
 
   // ================= ACTIVE BANNERS =================
   List<BannerModel> get activeBanners =>
