@@ -22,7 +22,8 @@ class CommentsScreen extends StatefulWidget {
 class _CommentsScreenState extends State<CommentsScreen> {
   final TextEditingController _commentController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  int _selectedRating = 5; // default ocena
+  int _selectedRating = 5;
+  bool _newestFirst = true;
 
   @override
   void initState() {
@@ -33,9 +34,12 @@ class _CommentsScreenState extends State<CommentsScreen> {
     });
   }
 
-  // ===============================
-  // ADD COMMENT
-  // ===============================
+  void _toggleSort() {
+    setState(() {
+      _newestFirst = !_newestFirst;
+    });
+  }
+
   void _addComment(String text) async {
     if (text.trim().isEmpty) return;
 
@@ -128,6 +132,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
       userName: userProvider.currentUser!.name,
       text: text,
       rating: _selectedRating,
+      createdAt: DateTime.now(),
     );
 
     final commentVM = context.read<CommentViewModel>();
@@ -143,20 +148,74 @@ class _CommentsScreenState extends State<CommentsScreen> {
     );
   }
 
+  void _deleteComment(Comment comment) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFFFFC1CC),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+        title: const Text(
+          'Brisanje komentara',
+          style: TextStyle(color: Color(0xFF800020), fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Da li ste sigurni da želite da obrišete ovaj komentar?',
+          style: TextStyle(color: Color(0xFF800020)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Otkaži', style: TextStyle(color: Color(0xFF800020))),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD87F7F),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              final commentVM = context.read<CommentViewModel>();
+              await commentVM.deleteComment(comment.id);
+            },
+            child: const Text('Obriši', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final commentVM = context.watch<CommentViewModel>();
     final userProvider = context.watch<UserProvider>();
 
-    final comments = commentVM.comments
+    List<Comment> comments = commentVM.comments
         .where((c) => c.productId == widget.productId)
         .toList();
+
+    comments.sort((a, b) => _newestFirst
+        ? b.createdAt.compareTo(a.createdAt)
+        : a.createdAt.compareTo(b.createdAt));
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5E8E8),
       appBar: AppBar(
         backgroundColor: const Color(0xFFD87F7F),
+        iconTheme: const IconThemeData(color: Colors.white),
         title: const Text('Komentari', style: TextStyle(color: Colors.white)),
+        actions: [
+          TextButton.icon(
+            onPressed: _toggleSort,
+            icon: Icon(
+              _newestFirst ? Icons.arrow_downward : Icons.arrow_upward,
+              color: Colors.white,
+            ),
+            label: Text(
+              _newestFirst ? 'Najnoviji' : 'Najstariji',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -179,24 +238,44 @@ class _CommentsScreenState extends State<CommentsScreen> {
                   ),
                   child: ListTile(
                     title: Text(comment.text ?? ''),
-                    subtitle: Row(
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          comment.userName ?? '',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[700]),
-                        ),
-                        const SizedBox(width: 10),
-                        // ====================
-                        // ZVEZDICE
-                        // ====================
                         Row(
-                          children: _buildRatingStars(
-                            comment.rating?.toDouble() ?? 0,
-                            14.0,
-                            Colors.pinkAccent,
-                          ),
+                          children: [
+                            Text(
+                              comment.userName ?? '',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[700]),
+                            ),
+                            const SizedBox(width: 10),
+                            Row(
+                              children: _buildRatingStars(
+                                comment.rating?.toDouble() ?? 0,
+                                14.0,
+                                Colors.pinkAccent,
+                              ),
+                            ),
+                            // ADMIN delete button
+                            if (userProvider.isAdmin) ...[
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => _deleteComment(comment),
+                                child: const Icon(
+                                  Icons.delete_forever,
+                                  color: Colors.pinkAccent,
+                                  size: 20,
+                                ),
+                              ),
+                            ]
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatDate(comment.createdAt),
+                          style: TextStyle(
+                              fontSize: 10, color: Colors.grey[600]),
                         ),
                       ],
                     ),
@@ -209,7 +288,6 @@ class _CommentsScreenState extends State<CommentsScreen> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // RATING SELECTOR
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(5, (index) {
@@ -219,7 +297,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
                         _selectedRating >= starIndex
                             ? Icons.star
                             : Icons.star_border,
-                        color: Colors.pinkAccent, // ROZE
+                        color: Colors.pinkAccent,
                       ),
                       onPressed: () =>
                           setState(() => _selectedRating = starIndex),
@@ -265,7 +343,6 @@ class _CommentsScreenState extends State<CommentsScreen> {
     );
   }
 
-  // ====================== POMOĆNA FUNKCIJA ZA ZVEZDICE ======================
   List<Widget> _buildRatingStars(double rating, double size, Color color) {
     List<Widget> stars = [];
     int fullStars = rating.floor();
@@ -281,5 +358,12 @@ class _CommentsScreenState extends State<CommentsScreen> {
       stars.add(Icon(Icons.star_border, color: color, size: size));
     }
     return stars;
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}.'
+        '${date.month.toString().padLeft(2, '0')}.'
+        '${date.year} ${date.hour.toString().padLeft(2, '0')}:'
+        '${date.minute.toString().padLeft(2, '0')}';
   }
 }

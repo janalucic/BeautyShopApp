@@ -26,6 +26,9 @@ class CommentViewModel extends ChangeNotifier {
 
     try {
       _comments = await _commentService.getComments(productId);
+
+      // Sortiranje po datumu kreiranja, najnoviji prvi
+      _comments.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     } catch (e) {
       _errorMessage = 'Greška pri učitavanju komentara';
     } finally {
@@ -43,8 +46,11 @@ class CommentViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _commentService.addComment(comment); // comment sada ima rating
-      _comments.add(comment); // lokalno dodavanje
+      await _commentService.addComment(comment);
+      _comments.add(comment);
+
+      // Sortiranje nakon dodavanja
+      _comments.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     } catch (e) {
       _errorMessage = 'Greška pri dodavanju komentara';
     } finally {
@@ -52,7 +58,6 @@ class CommentViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
-
 
   // ===============================
   // DELETE COMMENT
@@ -63,7 +68,7 @@ class CommentViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _commentService.deleteComment(commentId); // <-- šalje int
+      await _commentService.deleteComment(commentId);
       _comments.removeWhere((c) => c.id == commentId);
     } catch (e) {
       _errorMessage = 'Greška pri brisanju komentara';
@@ -73,7 +78,6 @@ class CommentViewModel extends ChangeNotifier {
     }
   }
 
-
   // ===============================
   // CLEAR COMMENTS
   // ===============================
@@ -81,22 +85,24 @@ class CommentViewModel extends ChangeNotifier {
     _comments = [];
     notifyListeners();
   }
+
   // ===============================
-// GET AVERAGE RATING FOR A PRODUCT
-// ===============================
+  // GET AVERAGE RATING FOR A PRODUCT
+  // ===============================
   double getAverageRating(int productId) {
-    final productComments = _comments.where((c) => c.productId == productId).toList();
+    final productComments =
+    _comments.where((c) => c.productId == productId).toList();
     if (productComments.isEmpty) return 0.0;
 
-    final total = productComments.fold<int>(0, (sum, c) => sum + (c.rating ?? 0));
+    final total =
+    productComments.fold<int>(0, (sum, c) => sum + (c.rating ?? 0));
     return total / productComments.length;
   }
 
-// ===============================
-// GET NUMBER OF COMMENTS FOR PRODUCT
-// ===============================
+  // ===============================
+  // GET NUMBER OF COMMENTS FOR PRODUCT
+  // ===============================
   int getCommentCount(int productId) {
     return _comments.where((c) => c.productId == productId).length;
   }
-
 }

@@ -12,26 +12,40 @@ class CommentService {
     final snapshot = await _commentsRef.get();
     if (!snapshot.exists || snapshot.value == null) return [];
 
-    // Firebase može vratiti List ili Map, proveravamo
-    List<dynamic> data;
+    List<dynamic> data = [];
+
     if (snapshot.value is List) {
       data = List<dynamic>.from(snapshot.value as List);
     } else if (snapshot.value is Map) {
       data = (snapshot.value as Map).values.toList();
-    } else {
-      return [];
     }
 
     final List<Comment> comments = [];
 
+    bool needsUpdate = false; // flag za update starih komentara
+
     for (var commentMap in data) {
-      if (commentMap == null) continue; // preskoči null-ove
+      if (commentMap == null) continue;
       final map = Map<String, dynamic>.from(commentMap);
+
+      // Ako komentar nema createdAt, dodaj timestamp sada
+      if (!map.containsKey('createdAt')) {
+        map['createdAt'] = DateTime.now().millisecondsSinceEpoch;
+        needsUpdate = true; // moramo da sačuvamo ovu promenu u Firebase
+      }
 
       if (map['productId'] == productId) {
         comments.add(Comment.fromJson(map));
       }
     }
+
+    // Ako smo dodali createdAt starim komentarima, sačuvaj nazad
+    if (needsUpdate) {
+      await _commentsRef.set(data);
+    }
+
+    // Sortiranje po datumu, najnoviji prvi
+    comments.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     return comments;
   }
@@ -51,9 +65,8 @@ class CommentService {
       }
     }
 
-    // Dodaj novi komentar (sada sa rating)
+    // Novi komentar već ima createdAt u Comment.toJson()
     data.add(comment.toJson());
-
     await _commentsRef.set(data);
   }
 
@@ -64,50 +77,19 @@ class CommentService {
     final snapshot = await _commentsRef.get();
     if (!snapshot.exists || snapshot.value == null) return;
 
-    List<dynamic> data;
+    List<dynamic> data = [];
+
     if (snapshot.value is List) {
       data = List<dynamic>.from(snapshot.value as List);
     } else if (snapshot.value is Map) {
       data = (snapshot.value as Map).values.toList();
-    } else {
-      return;
     }
 
-    // Ukloni komentar sa zadatim ID
     data.removeWhere((element) {
       if (element == null) return false;
       final map = Map<String, dynamic>.from(element);
       return map['id'] == id;
     });
-
-    await _commentsRef.set(data);
-  }
-
-  // ===============================
-  // UPDATE COMMENT (opciono)
-  // ===============================
-  Future<void> updateComment(Comment comment) async {
-    final snapshot = await _commentsRef.get();
-    if (!snapshot.exists || snapshot.value == null) return;
-
-    List<dynamic> data;
-    if (snapshot.value is List) {
-      data = List<dynamic>.from(snapshot.value as List);
-    } else if (snapshot.value is Map) {
-      data = (snapshot.value as Map).values.toList();
-    } else {
-      return;
-    }
-
-    // Pronađi i izmeni komentar
-    for (int i = 0; i < data.length; i++) {
-      if (data[i] == null) continue;
-      final map = Map<String, dynamic>.from(data[i]);
-      if (map['id'] == comment.id) {
-        data[i] = comment.toJson();
-        break;
-      }
-    }
 
     await _commentsRef.set(data);
   }

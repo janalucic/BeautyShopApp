@@ -6,6 +6,7 @@ import 'screens/splash_screen.dart';
 import 'viewmodels/product.dart';
 import 'viewmodels/category.dart';
 import 'viewmodels/comment.dart';
+import 'viewmodels/banner.dart';
 import 'providers/user_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/currency_provider.dart';
@@ -14,21 +15,28 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
-  runApp(
-    MultiProvider(
+  runApp(const MyAppWrapper());
+}
+
+/// Wrapper da MultiProvider ne radi async posao
+class MyAppWrapper extends StatelessWidget {
+  const MyAppWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ProductViewModel()),
         Provider(create: (_) => CategoryViewModel()),
-        ChangeNotifierProvider(
-          create: (_) => UserProvider()..initUser(), // ✅ KLJUČNA IZMJENA
-        ),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => CommentViewModel()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => CurrencyProvider()),
+        ChangeNotifierProvider(create: (_) => BannerViewModel()),
       ],
       child: const MyApp(),
-    ),
-  );
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {

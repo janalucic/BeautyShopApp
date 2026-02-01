@@ -1,19 +1,22 @@
-import 'dart:ui';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'category_products_screen.dart';
 import 'product_detail_screen.dart';
 import 'profile_screen.dart';
 import 'orders_screen.dart';
 import 'cart_screen.dart';
-import 'users_screen.dart'; // admin screen
+import 'users_screen.dart';
 
 import 'package:first_app_flutter/viewmodels/product.dart';
 import 'package:first_app_flutter/viewmodels/category.dart';
+import 'package:first_app_flutter/viewmodels/banner.dart';
 import 'package:first_app_flutter/models/category.dart' as model;
 import 'package:first_app_flutter/models/product.dart';
+import 'package:first_app_flutter/models/banner.dart';
 
 import '../providers/user_provider.dart';
 
@@ -35,12 +38,6 @@ class _HomeScreenState extends State<HomeScreen>
   String _searchQuery = '';
   int? _selectedCategoryId;
 
-  final List<String> banners = [
-    'assets/images/bannerno1.jpg',
-    'assets/images/bannerno2.jpg',
-    'assets/images/maskara.jpg',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -56,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProductViewModel>().fetchProducts();
       context.read<CategoryViewModel>().fetchCategories();
+      context.read<BannerViewModel>().fetchBanners();
     });
   }
 
@@ -201,7 +199,426 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // ================= BUILD =================
+  // ================= BANNERI =================
+
+  Widget _bannerSection(BannerViewModel bannerVM, ProductViewModel productVM) {
+    final banners = bannerVM.activeBanners;
+    final isAdmin = context.read<UserProvider>().isAdmin;
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 200,
+          child: banners.isEmpty
+              ? Center(
+            child: Text(
+              'Nema aktivnih banera.',
+              style: TextStyle(color: Colors.grey[400]),
+            ),
+          )
+              : PageView.builder(
+            controller: _pageController,
+            itemCount: banners.length,
+            itemBuilder: (_, i) {
+              final banner = banners[i];
+              return Stack(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      if (banner.productId != 0) {
+                        final product = productVM.products.firstWhere(
+                                (p) => p.id == banner.productId,
+                            orElse: () => Product(
+                                id: 0,
+                                name: 'Nepoznat proizvod',
+                                description: '',
+                                price: 0,
+                                imageUrl: '',
+                                popular: false,
+                              categoryId: 0,
+                            ));
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProductDetailScreen(
+                                product: product, isAdmin: isAdmin),
+                          ),
+                        );
+                      }
+                    },
+                    child: Image.network(
+                      banner.imageUrl,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    ),
+                  ),
+                  if (isAdmin)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Row(
+                        children: [
+                          _adminIcon(Icons.edit,
+                                  () => _showEditBannerDialog(banner)),
+                          const SizedBox(width: 4),
+                          _adminIcon(Icons.delete,
+                                  () => _showDeleteBannerDialog(banner)),
+                        ],
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 10),
+        SmoothPageIndicator(
+          controller: _pageController,
+          count: banners.length,
+          effect: const ExpandingDotsEffect(
+            activeDotColor: Color(0xFFD87F7F),
+            dotColor: Color(0xFFBFA1A1),
+          ),
+        ),
+        if (isAdmin)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: ElevatedButton.icon(
+              onPressed: _showAddBannerDialog,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text("Dodaj baner",
+                  style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF2A7A7),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // ================= ADMIN BANER DIALOGS =================
+
+  void _showDeleteBannerDialog(BannerModel banner) {
+    showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: const Color(0xFFD87F7F),
+          title:
+          const Text('Obriši baner', style: TextStyle(color: Colors.white)),
+          content: const Text('Da li ste sigurni da želite da obrišete baner?',
+              style: TextStyle(color: Colors.white)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Otkaži', style: TextStyle(color: Colors.white)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                context.read<BannerViewModel>().deleteBanner(banner.id);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+              child: const Text('Obriši',
+                  style: TextStyle(color: Color(0xFFD87F7F))),
+            ),
+          ],
+        ));
+  }
+
+  void _showAddBannerDialog() async {
+    XFile? pickedImage;
+    Product? selectedProduct;
+    bool isActive = true;
+
+    final products = context.read<ProductViewModel>().products;
+
+    showDialog(
+        context: context,
+        builder: (_) => StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFFD87F7F),
+            title: const Text('Dodaj baner', style: TextStyle(color: Colors.white)),
+            content: SingleChildScrollView(
+              child: Column(
+                children: [
+                  ElevatedButton(
+                      onPressed: () async {
+                        final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+                        if (image != null) {
+                          setState(() {
+                            pickedImage = image;
+                          });
+                        }
+                      },
+                      child: Text(
+                          pickedImage == null ? 'Izaberi sliku' : 'Slika izabrana')),
+                  const SizedBox(height: 8),
+                  DropdownButton<Product>(
+                    value: selectedProduct,
+                    hint: const Text('Izaberi proizvod', style: TextStyle(color: Colors.white)),
+                    isExpanded: true,
+                    dropdownColor: const Color(0xFFD87F7F),
+                    items: products.map((p) => DropdownMenuItem(
+                      value: p,
+                      child: Text(p.name, style: const TextStyle(color: Colors.white)),
+                    )).toList(),
+                    onChanged: (p) => setState(() => selectedProduct = p),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text('Aktivan', style: TextStyle(color: Colors.white)),
+                      Checkbox(
+                        value: isActive,
+                        onChanged: (v) => setState(() => isActive = v ?? true),
+                        activeColor: Colors.white,
+                        checkColor: const Color(0xFFD87F7F),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Otkaži', style: TextStyle(color: Colors.white)),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (pickedImage == null) return;
+                  final url = await context.read<BannerViewModel>().uploadImage(File(pickedImage!.path));
+                  final banner = BannerModel(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      imageUrl: url,
+                      productId: selectedProduct?.id ?? 0,
+                      isActive: isActive);
+                  await context.read<BannerViewModel>().addBanner(banner);
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+                child: const Text('Sačuvaj', style: TextStyle(color: Color(0xFFD87F7F))),
+              ),
+            ],
+          );
+        }));
+  }
+
+  void _showEditBannerDialog(BannerModel banner) async {
+    XFile? pickedImage;
+    int? selectedProductId = banner.productId != 0 ? banner.productId : null;
+    bool isActive = banner.isActive;
+
+    final products = context.read<ProductViewModel>().products;
+
+    showDialog(
+        context: context,
+        builder: (_) => StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            backgroundColor: const Color(0xFFD87F7F),
+            title: const Text('Izmeni baner', style: TextStyle(color: Colors.white)),
+            content: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Dugme za izbor slike
+                  ElevatedButton(
+                      onPressed: () async {
+                        final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+                        if (image != null) {
+                          setState(() {
+                            pickedImage = image;
+                          });
+                        }
+                      },
+                      child: Text(
+                          pickedImage == null ? 'Izaberi novu sliku' : 'Slika izabrana')),
+                  const SizedBox(height: 8),
+
+                  // Dropdown za izbor proizvoda
+                  DropdownButton<int>(
+                    value: selectedProductId,
+                    hint: const Text('Izaberi proizvod', style: TextStyle(color: Colors.white)),
+                    isExpanded: true,
+                    dropdownColor: const Color(0xFFD87F7F),
+                    items: products.map((p) => DropdownMenuItem(
+                      value: p.id,
+                      child: Text(p.name, style: const TextStyle(color: Colors.white)),
+                    )).toList(),
+                    onChanged: (id) => setState(() => selectedProductId = id),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Checkbox "Aktivan"
+                  Row(
+                    children: [
+                      const Text('Aktivan', style: TextStyle(color: Colors.white)),
+                      Checkbox(
+                        value: isActive,
+                        onChanged: (v) => setState(() => isActive = v ?? true),
+                        activeColor: Colors.white,
+                        checkColor: const Color(0xFFD87F7F),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Otkaži', style: TextStyle(color: Colors.white)),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  String url = banner.imageUrl;
+                  // Ako je izabrana nova slika, upload na Cloudinary
+                  if (pickedImage != null) {
+                    url = await context.read<BannerViewModel>().uploadImage(File(pickedImage!.path));
+                  }
+
+                  final updatedBanner = BannerModel(
+                    id: banner.id,
+                    imageUrl: url,
+                    productId: selectedProductId ?? 0,
+                    isActive: isActive,
+                  );
+
+                  await context.read<BannerViewModel>().updateBanner(updatedBanner);
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+                child: const Text('Sačuvaj', style: TextStyle(color: Color(0xFFD87F7F))),
+              ),
+            ],
+          );
+        }));
+  }
+  // ====================== BUILD HOME SCREEN METHOD ======================
+
+  Widget _buildHomeScreen(ProductViewModel productVM, CategoryViewModel categoryVM, BannerViewModel bannerVM) {
+    final products = productVM.products;
+    final popular = products.where((p) => p.popular).toList();
+    final searchResults = _searchQuery.isEmpty
+        ? <Product>[]
+        : products
+        .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+        .toList();
+
+    final isAdmin = context.read<UserProvider>().isAdmin;
+
+    return SingleChildScrollView(
+        child: Column(
+            children: [
+            const SizedBox(height: 40),
+        SizedBox(
+          width: MediaQuery.of(context).size.width,
+          child: Image.asset(
+            'assets/images/adora.jpg',
+            height: 120,
+            fit: BoxFit.cover,
+          ),
+        ),
+        const SizedBox(height: 16),
+        // SEARCH
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: TextField(
+            onChanged: (v) => setState(() => _searchQuery = v),
+            decoration: InputDecoration(
+              hintText: 'Pretraži proizvode...',
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide.none),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        if (_searchQuery.isEmpty) ...[
+    // KATEGORIJE
+    Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    child: ValueListenableBuilder<List<model.Category>>(
+    valueListenable: categoryVM.categories,
+    builder: (context, categories, _) {
+    if (categories.isEmpty) {
+    return const Center(
+    child: Text(
+    'Nema kategorija.',
+    style: TextStyle(color: Colors.grey),
+    ),
+    );
+    }
+
+    return SizedBox(
+    height: 110,
+    child: ListView(
+    scrollDirection: Axis.horizontal,
+    children: [
+    ...categories.map(
+    (c) => _categoryItem(c, isAdmin, categoryVM),
+    ),
+    if (isAdmin)
+    Padding(
+    padding: const EdgeInsets.only(left: 8),
+    child: ElevatedButton.icon(
+    onPressed: () {},
+    icon: const Icon(Icons.add, color: Colors.white),
+    label: const Text("Dodaj",
+    style: TextStyle(color: Colors.white)),
+    style: ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFFF2A7A7),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(20)),
+      ),
+      ),
+      ),
+      ],
+      ),
+      );
+    },
+    ),
+    ),
+
+          // BANERI
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _bannerSection(bannerVM, productVM),
+          ),
+
+          const SizedBox(height: 20),
+          const Text('Izdvajamo za vas',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFD87F7F))),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 210,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: popular.length,
+              itemBuilder: (_, i) => _recommendedProductCard(popular[i]),
+            ),
+          ),
+        ] else ...[
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: searchResults.length,
+            itemBuilder: (_, i) => _recommendedProductCard(searchResults[i]),
+          ),
+        ],
+            ],
+        ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -210,27 +627,18 @@ class _HomeScreenState extends State<HomeScreen>
 
     final productVM = context.watch<ProductViewModel>();
     final categoryVM = context.watch<CategoryViewModel>();
-
-    final products = productVM.products;
-    final popular = products.where((p) => p.popular).toList();
-
-    final searchResults = _searchQuery.isEmpty
-        ? <Product>[]
-        : products
-        .where((p) =>
-        p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
-        .toList();
+    final bannerVM = context.watch<BannerViewModel>();
 
     // === SCREEN LIST ZA NAVBAR ===
     final List<Widget> screens = isAdmin
         ? [
-      _buildHomeScreen(productVM, categoryVM),
+      _buildHomeScreen(productVM, categoryVM, bannerVM),
       const OrdersScreen(),
       const UsersScreen(),
       const ProfileScreen(),
     ]
         : [
-      _buildHomeScreen(productVM, categoryVM),
+      _buildHomeScreen(productVM, categoryVM, bannerVM),
       const OrdersScreen(),
       const CartScreen(),
       const ProfileScreen(),
@@ -240,14 +648,17 @@ class _HomeScreenState extends State<HomeScreen>
     final List<BottomNavigationBarItem> navItems = isAdmin
         ? const [
       BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-      BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Porudžbine'),
+      BottomNavigationBarItem(
+          icon: Icon(Icons.list_alt), label: 'Porudžbine'),
       BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Korisnici'),
       BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
     ]
         : const [
       BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-      BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Porudžbine'),
-      BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Korpa'),
+      BottomNavigationBarItem(
+          icon: Icon(Icons.list_alt), label: 'Porudžbine'),
+      BottomNavigationBarItem(
+          icon: Icon(Icons.shopping_cart), label: 'Korpa'),
       BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
     ];
 
@@ -263,181 +674,6 @@ class _HomeScreenState extends State<HomeScreen>
         unselectedItemColor: const Color(0xFFBFA1A1),
         type: BottomNavigationBarType.fixed,
         items: navItems,
-      ),
-    );
-  }
-
-  // ====================== BUILD HOME SCREEN METHOD ======================
-  Widget _buildHomeScreen(ProductViewModel productVM, CategoryViewModel categoryVM) {
-    final products = productVM.products;
-    final popular = products.where((p) => p.popular).toList();
-    final searchResults = _searchQuery.isEmpty
-        ? <Product>[]
-        : products
-        .where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase()))
-        .toList();
-
-    final isAdmin = context.read<UserProvider>().isAdmin;
-
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          const SizedBox(height: 40),
-          SizedBox(
-            width: MediaQuery.of(context).size.width,
-            child: Image.asset(
-              'assets/images/adora.jpg',
-              height: 120,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // SEARCH
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              onChanged: (v) => setState(() => _searchQuery = v),
-              decoration: InputDecoration(
-                hintText: 'Pretraži proizvode...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide.none),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          if (_searchQuery.isEmpty) ...[
-            // KATEGORIJE
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: ValueListenableBuilder<List<model.Category>>(
-                valueListenable: categoryVM.categories,
-                builder: (context, categories, _) {
-                  if (categories.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Nema kategorija.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    );
-                  }
-
-                  Widget categoryItem(model.Category category) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _categoryButton(category),
-                          if (isAdmin) ...[
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () {
-                                    _showEditCategoryDialog(category, categoryVM);
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    shape: const CircleBorder(),
-                                    padding: const EdgeInsets.all(8),
-                                    backgroundColor: const Color(0xFFD87F7F),
-                                  ),
-                                  child: const Icon(Icons.edit,
-                                      size: 16, color: Colors.white),
-                                ),
-                                const SizedBox(width: 4),
-                                ElevatedButton(
-                                  onPressed: () {},
-                                  style: ElevatedButton.styleFrom(
-                                    shape: const CircleBorder(),
-                                    padding: const EdgeInsets.all(8),
-                                    backgroundColor: const Color(0xFFD87F7F),
-                                  ),
-                                  child: const Icon(Icons.delete,
-                                      size: 16, color: Colors.white),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ],
-                      ),
-                    );
-                  }
-
-                  return SizedBox(
-                    height: 110,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        ...categories.map(categoryItem).toList(),
-                        if (isAdmin)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8),
-                            child: ElevatedButton.icon(
-                              onPressed: () {},
-                              icon: const Icon(Icons.add, color: Colors.white),
-                              label: const Text("Dodaj",
-                                  style: TextStyle(color: Colors.white)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFF2A7A7),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20)),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // BANNERI
-            SizedBox(
-              height: 200,
-              child: PageView(
-                controller: _pageController,
-                children: banners.map((b) => Image.asset(b, fit: BoxFit.cover)).toList(),
-              ),
-            ),
-            const SizedBox(height: 10),
-            SmoothPageIndicator(
-              controller: _pageController,
-              count: banners.length,
-              effect: const ExpandingDotsEffect(
-                activeDotColor: Color(0xFFD87F7F),
-                dotColor: Color(0xFFBFA1A1),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text('Izdvajamo za vas',
-                style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFD87F7F))),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 210,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: popular.length,
-                itemBuilder: (_, i) => _recommendedProductCard(popular[i]),
-              ),
-            ),
-          ] else ...[
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: searchResults.length,
-              itemBuilder: (_, i) => _recommendedProductCard(searchResults[i]),
-            ),
-          ],
-        ],
       ),
     );
   }
