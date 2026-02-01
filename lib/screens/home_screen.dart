@@ -316,7 +316,7 @@ class _HomeScreenState extends State<HomeScreen>
               child: const Text('Otkaži', style: TextStyle(color: Colors.white)),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 context.read<BannerViewModel>().deleteBanner(banner.id);
                 Navigator.pop(context);
               },
@@ -513,15 +513,42 @@ class _HomeScreenState extends State<HomeScreen>
         child: Column(
             children: [
             const SizedBox(height: 40),
-        SizedBox(
-          width: MediaQuery.of(context).size.width,
-          child: Image.asset(
-            'assets/images/adora.jpg',
-            height: 120,
-            fit: BoxFit.cover,
-          ),
-        ),
-        const SizedBox(height: 16),
+              SizedBox(
+                width: MediaQuery.of(context).size.width,
+                height: 120, // visina loga
+                child: Stack(
+                  children: [
+                    // Logo kao pozadina
+                    Image.asset(
+                      'assets/images/adora.jpg',
+                      width: double.infinity,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    ),
+
+                    // Ikonica za obaveštenja u gornjem desnom uglu
+                    if (!context.watch<UserProvider>().isGuest &&
+                        !context.watch<UserProvider>().isAdmin)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: IconButton(
+                          onPressed: () {
+                            // Za sada ne radi ništa
+                          },
+                          icon: const Icon(
+                            Icons.notifications,
+                            color: Colors.white, // bela ikonica preko loga
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+
+              const SizedBox(height: 16),
         // SEARCH
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
