@@ -83,11 +83,84 @@ class _HomeScreenState extends State<HomeScreen>
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFFD87F7F),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
       ),
-      child: Text(category.name, style: const TextStyle(color: Colors.white)),
+      child: Text(
+        category.name,
+        style: const TextStyle(color: Colors.white),
+      ),
     );
   }
+
+  void _showDeleteCategoryDialog(model.Category category, CategoryViewModel vm) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFFD87F7F),
+        title: const Text('Obriši kategoriju', style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Da li ste sigurni da želite da obrišete kategoriju "${category.name}"?',
+          style: const TextStyle(color: Colors.white),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Otkaži', style: TextStyle(color: Colors.white)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await vm.deleteCategory(category.id); // briše iz Firebase
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+            child: const Text('Obriši', style: TextStyle(color: Color(0xFFD87F7F))),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  void _showAddCategoryDialog(CategoryViewModel categoryVM) {
+    final TextEditingController controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: const Color(0xFFD87F7F),
+        title: const Text('Dodaj novu kategoriju', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: controller,
+          style: const TextStyle(color: Colors.white),
+          decoration: const InputDecoration(
+            hintText: 'Unesi ime kategorije',
+            hintStyle: TextStyle(color: Colors.white70),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Otkaži', style: TextStyle(color: Colors.white)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                await categoryVM.addCategory(name); // pozivaš ViewModel
+                Navigator.pop(context); // zatvara dijalog
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
+            child: const Text('Dodaj', style: TextStyle(color: Color(0xFFD87F7F))),
+          ),
+        ],
+      ),
+    );
+  }
+
+
 
   void _showEditCategoryDialog(
       model.Category category, CategoryViewModel vm) {
@@ -141,7 +214,11 @@ class _HomeScreenState extends State<HomeScreen>
                 _adminIcon(Icons.edit,
                         () => _showEditCategoryDialog(category, vm)),
                 const SizedBox(width: 4),
-                _adminIcon(Icons.delete, () {}),
+                _adminIcon(
+                  Icons.delete,
+                      () => _showDeleteCategoryDialog(category, vm),
+                ),
+
               ],
             ),
           ],
@@ -566,27 +643,24 @@ class _HomeScreenState extends State<HomeScreen>
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ValueListenableBuilder<List<model.Category>>(
                 valueListenable: categoryVM.categories,
-                builder: (context, categories, _) {
-                  if (categories.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Nema kategorija.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    );
-                  }
+                  builder: (context, categories, _) {
+                    if (categories.isEmpty) {
+                      return const Center(
+                        child: Text(
+                          'Nema kategorija.',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      );
+                    }
 
-                  return SizedBox(
-                    height: 110,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ...categories.map((c) => _categoryItem(c, isAdmin, categoryVM)),
                         if (isAdmin)
                           Padding(
-                            padding: const EdgeInsets.only(left: 8),
+                            padding: const EdgeInsets.only(left: 8, bottom: 8),
                             child: ElevatedButton.icon(
-                              onPressed: () {},
+                              onPressed: () => _showAddCategoryDialog(categoryVM),
                               icon: const Icon(Icons.add, color: Colors.white),
                               label: const Text("Dodaj",
                                   style: TextStyle(color: Colors.white)),
@@ -597,13 +671,22 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                             ),
                           ),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: categories
+                                .map((c) => _categoryItem(c, isAdmin, categoryVM))
+                                .toList(),
+                          ),
+                        ),
                       ],
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
             ),
-            // BANERI
+
+
+                  // BANERI
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _bannerSection(bannerVM, productVM),

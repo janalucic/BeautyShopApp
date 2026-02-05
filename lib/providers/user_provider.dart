@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
-import '../models/user.dart'; // UserModel
+import '../models/user.dart';
 
 class UserProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -14,6 +14,19 @@ class UserProvider extends ChangeNotifier {
 
   List<UserModel> _users = [];
 
+  // ===================== CONSTRUCTOR =====================
+  UserProvider() {
+    _auth.authStateChanges().listen((user) {
+      if (user == null) {
+        _currentUser = null;
+        _isGuest = true;
+        notifyListeners();
+      } else {
+        initUser(); // JEDINO mesto koje čita bazu
+      }
+    });
+  }
+
   // ===================== GETTERI =====================
   UserModel? get currentUser => _currentUser;
   List<UserModel> get users => _users;
@@ -23,7 +36,6 @@ class UserProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   // ===================== INIT USER =====================
-  /// Poziva se na startu aplikacije (npr. u SplashScreen)
   Future<void> initUser() async {
     final firebaseUser = _auth.currentUser;
 
@@ -43,7 +55,9 @@ class UserProvider extends ChangeNotifier {
       if (snapshot.exists && snapshot.value != null) {
         final data =
         Map<dynamic, dynamic>.from(snapshot.value as dynamic);
-        _currentUser = UserModel.fromMap(firebaseUser.uid, data);
+
+        _currentUser =
+            UserModel.fromMap(firebaseUser.uid, data);
         _isGuest = false;
       } else {
         _currentUser = null;
@@ -59,32 +73,30 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ===================== FETCH ALL USERS (ADMIN) =====================
-  Future<void> fetchAllUsers() async {
-    _isLoading = true;
-    notifyListeners();
-
+  // ===================== LOGIN USER =====================
+  /// Radi SAMO Firebase Auth
+  /// Bazu učitava authStateChanges → initUser
+  Future<String?> loginUser({
+    required String email,
+    required String password,
+  }) async {
     try {
-      final snapshot = await _usersRef.get();
-      if (snapshot.exists && snapshot.value != null) {
-        final data =
-        Map<String, dynamic>.from(snapshot.value as dynamic);
+      _isLoading = true;
+      notifyListeners();
 
-        _users = data.entries.map((e) {
-          final userMap =
-          Map<dynamic, dynamic>.from(e.value);
-          return UserModel.fromMap(e.key, userMap);
-        }).toList();
-      } else {
-        _users = [];
-      }
+      await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      return null;
     } catch (e) {
-      debugPrint('Greška fetchAllUsers: $e');
-      _users = [];
+      debugPrint('Greška loginUser: $e');
+      return 'Neispravni kredencijali.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    _isLoading = false;
-    notifyListeners();
   }
 
   // ===================== REGISTER USER =====================
@@ -135,42 +147,32 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  // ===================== LOGIN USER =====================
-  Future<String?> loginUser({
-    required String email,
-    required String password,
-  }) async {
+  // ===================== FETCH ALL USERS (ADMIN) =====================
+  Future<void> fetchAllUsers() async {
+    _isLoading = true;
+    notifyListeners();
+
     try {
-      _isLoading = true;
-      notifyListeners();
+      final snapshot = await _usersRef.get();
+      if (snapshot.exists && snapshot.value != null) {
+        final data =
+        Map<String, dynamic>.from(snapshot.value as dynamic);
 
-      final credential =
-      await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      final uid = credential.user!.uid;
-      final snapshot = await _usersRef.child(uid).get();
-
-      if (!snapshot.exists || snapshot.value == null) {
-        return 'Korisnik postoji u Auth, ali ne i u bazi.';
+        _users = data.entries.map((e) {
+          final userMap =
+          Map<dynamic, dynamic>.from(e.value);
+          return UserModel.fromMap(e.key, userMap);
+        }).toList();
+      } else {
+        _users = [];
       }
-
-      final data =
-      Map<dynamic, dynamic>.from(snapshot.value as dynamic);
-
-      _currentUser = UserModel.fromMap(uid, data);
-      _isGuest = false;
-
-      return null;
     } catch (e) {
-      debugPrint('Greška loginUser: $e');
-      return 'Neispravni kredencijali.';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      debugPrint('Greška fetchAllUsers: $e');
+      _users = [];
     }
+
+    _isLoading = false;
+    notifyListeners();
   }
 
   // ===================== UPDATE CURRENT USER =====================
