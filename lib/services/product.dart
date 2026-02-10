@@ -5,9 +5,7 @@ class ProductService {
   final DatabaseReference _productsRef =
   FirebaseDatabase.instance.ref('Products');
 
-  // ===============================
-  // GET ALL PRODUCTS
-  // ===============================
+
   Future<List<Product>> getProducts() async {
     final snapshot = await _productsRef.get();
 
@@ -15,7 +13,6 @@ class ProductService {
 
     final raw = snapshot.value;
 
-    // Firebase može vratiti List ili Map, obraditi oba slučaja
     if (raw is List) {
       return raw
           .where((e) => e != null)
@@ -31,9 +28,7 @@ class ProductService {
     return [];
   }
 
-  // ===============================
-  // GET PRODUCT BY ID
-  // ===============================
+
   Future<Product?> getProductById(int id) async {
     final snapshot = await _productsRef.child(id.toString()).get();
 
@@ -44,31 +39,22 @@ class ProductService {
     );
   }
 
-  // ===============================
-  // GET POPULAR PRODUCTS
-  // ===============================
+
   Future<List<Product>> getPopularProducts() async {
     final products = await getProducts();
     return products.where((p) => p.popular).toList();
   }
 
-  // ===============================
-  // ADD PRODUCT
-  // ===============================
   Future<void> addProduct(Product product) async {
     await _productsRef.child(product.id.toString()).set(product.toJson());
   }
 
-  // ===============================
-  // UPDATE PRODUCT
-  // ===============================
+
   Future<void> updateProduct(Product product) async {
     await _productsRef.child(product.id.toString()).update(product.toJson());
   }
 
-  // ===============================
-  // DELETE PRODUCT
-  // ===============================
+
   Future<void> deleteProduct(int id) async {
     await _productsRef.child(id.toString()).remove();
   }

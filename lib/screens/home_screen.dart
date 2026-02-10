@@ -248,7 +248,10 @@ class _HomeScreenState extends State<HomeScreen>
           context,
           MaterialPageRoute(
             builder: (_) =>
-                ProductDetailScreen(product: product, isAdmin: true),
+                ProductDetailScreen(
+                    product: product,
+                    isAdmin: context.read<UserProvider>().isAdmin,
+                ),
           ),
         );
       },
@@ -318,7 +321,10 @@ class _HomeScreenState extends State<HomeScreen>
                           context,
                           MaterialPageRoute(
                             builder: (_) =>
-                                ProductDetailScreen(product: product, isAdmin: isAdmin),
+                                ProductDetailScreen(
+                                    product: product,
+                                    isAdmin: context.read<UserProvider>().isAdmin,
+                                ),
                           ),
                         );
                       }

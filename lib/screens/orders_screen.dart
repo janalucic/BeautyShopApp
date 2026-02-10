@@ -228,7 +228,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
-  Widget _buildFilters() {
+  Widget _buildFilters(bool isAdmin) {
     final statuses = ['Svi', 'obrađuje se', 'poslato', 'isporučeno', 'otkazano'];
 
     return Padding(
@@ -236,32 +236,36 @@ class _OrdersScreenState extends State<OrdersScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextField(
-            onChanged: (v) => setState(() => _searchQuery = v),
-            style: const TextStyle(fontSize: 16),
-            decoration: InputDecoration(
-              hintText: 'Pretraži po imenu korisnika ...',
-              hintStyle: TextStyle(color: Colors.grey[700], fontSize: 16),
-              prefixIcon: const Icon(Icons.search, color: Colors.grey),
-              prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 50),
-              filled: true,
-              fillColor: Colors.white.withOpacity(0.95),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide.none,
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-                borderSide: BorderSide(color: Colors.deepPurple, width: 2),
+          // Pretraga po imenu - samo za admin
+          if (isAdmin)
+            TextField(
+              onChanged: (v) => setState(() => _searchQuery = v),
+              style: const TextStyle(fontSize: 16),
+              decoration: InputDecoration(
+                hintText: 'Pretraži po imenu korisnika ...',
+                hintStyle: TextStyle(color: Colors.grey[700], fontSize: 16),
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 50),
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.95),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide(color: Colors.deepPurple, width: 2),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
+          if (isAdmin) const SizedBox(height: 12),
+
+          // Filter po statusu - svi vide
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
@@ -293,7 +297,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       final name = _userNames[order['userId']] ?? '';
       final matchesName = name.toLowerCase().contains(_searchQuery.toLowerCase());
       final matchesStatus = _statusFilter == 'Svi' || order['status'] == _statusFilter;
-      return matchesName && matchesStatus;
+      return isAdmin ? (matchesName && matchesStatus) : matchesStatus;
     }).toList();
 
     return Scaffold(
@@ -326,7 +330,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     ],
                   ),
                 ),
-                _buildFilters(),
+                _buildFilters(isAdmin),
                 const SizedBox(height: 10),
                 Expanded(
                   child: _isLoading
